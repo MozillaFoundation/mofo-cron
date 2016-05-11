@@ -1,0 +1,24 @@
+{
+  "name": "mofo-cron",
+  "version": "1.0.0",
+  "description": "Mozilla Foundation Cron Tasks",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/MozillaFoundation/mofo-cron.git"
+  },
+  "author": "Christopher De Cairos <cade@mozillafoundation.org>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MozillaFoundation/mofo-cron/issues"
+  },
+  "homepage": "https://github.com/MozillaFoundation/mofo-cron#readme",
+  "dependencies": {
+    "aws-sdk": "^2.3.10"
+  },
+  "engines": {
+    "node": "^6.1.0"
+  }
+}
