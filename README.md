@@ -8,11 +8,12 @@ A collection of tasks that we wish to run at regular intervals. These tasks are 
 
 This task creates an image from the specified instance.
 
-Usage: `node tasks/create_image {region} {instanceId} {Name} {NoReboot} {DryRun}`
+Usage: `node tasks/create_image {region} {instanceId} {Name} {DayOfWeek} {NoReboot} {DryRun}`
 
 * region - AWS region to use
 * instanceId - id of the EC2 instance an image should be made of
 * Name - a name for the image, which will have the date appended to it
+* DayOfWeek - specify to only run the createImage command on a specific day. Compares the provided value with `(new Date()).getDay()`, so this value should be between 1 and 7, inclusive.
 * NoReboot - optional, true|false - default false - shutdown the instance to image it and then reboot
 * DryRun - optional, true|false - default false - Don't actually create the image, but check to make sure it would work.
 

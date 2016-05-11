@@ -5,6 +5,7 @@
 // <region> \
 // <instance_id> \
 // <image name> \
+// <DayOfWeek> \
 // <NoReboot (optional, default true)> \
 // <DryRun (optional, default false)>
 
@@ -19,8 +20,9 @@ const date = new Date();
 const region = process.argv[2];
 const InstanceId = process.argv[3];
 const Name = `${process.argv[4]}-${date.getUTCDate()}-${date.getUTCMonth()}-${date.getUTCFullYear()}`;
-const NoReboot = process.argv[5] === 'true'
-const DryRun = process.argv[6] === 'true';
+const DayOfWeek = process.argv[5];
+const NoReboot = process.argv[6] === 'true'
+const DryRun = process.argv[7] === 'true';
 const accessKeyId = process.env.ACCESS_KEY_ID;
 const secretAccessKey = process.env.SECRET_ACCESS_KEY;
 const EC2 = new AWS.EC2({ region, accessKeyId, secretAccessKey });
@@ -35,6 +37,13 @@ const BlockDeviceMappings = [
     }
   }
 ];
+
+if (DayOfWeek) {
+  if (+DayOfWeek !== date.getDay()) {
+    console.log('Not specified Day of Week');
+    process.exit(0);
+  }
+}
 
 EC2.createImage({
   InstanceId,
