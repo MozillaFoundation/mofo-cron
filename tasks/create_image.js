@@ -5,6 +5,7 @@
 // <region> \
 // <instance_id> \
 // <image name> \
+// <device name> \
 // <DayOfWeek> \
 // <NoReboot (optional, default true)> \
 // <DryRun (optional, default false)>
@@ -20,15 +21,17 @@ const date = new Date();
 const region = process.argv[2];
 const InstanceId = process.argv[3];
 const Name = `${process.argv[4]}-${date.getUTCDate()}-${date.getUTCMonth()}-${date.getUTCFullYear()}`;
-const DayOfWeek = process.argv[5];
-const NoReboot = process.argv[6] === 'true'
-const DryRun = process.argv[7] === 'true';
+const DeviceName = process.argv[5];
+const DayOfWeek = process.argv[6];
+const NoReboot = process.argv[7] === 'true'
+const DryRun = process.argv[8] === 'true';
 const accessKeyId = process.env.ACCESS_KEY_ID;
 const secretAccessKey = process.env.SECRET_ACCESS_KEY;
 const EC2 = new AWS.EC2({ region, accessKeyId, secretAccessKey });
 const Description = `Automatically generated AMI for ${InstanceId}`; 
 const BlockDeviceMappings = [
   {
+    DeviceName,
     Ebs: {
       DeleteOnTermination: false,
       Encrypted: false,
