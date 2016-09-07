@@ -16,7 +16,8 @@
   },
   "homepage": "https://github.com/MozillaFoundation/mofo-cron#readme",
   "dependencies": {
-    "aws-sdk": "^2.3.10"
+    "aws-sdk": "^2.3.10",
+    "ssl-date-checker": "^1.0.0"
   },
   "engines": {
     "node": "^6.1.0"
