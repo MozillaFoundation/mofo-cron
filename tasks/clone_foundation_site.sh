@@ -1,17 +1,6 @@
 #!/usr/bin/env bash
 
-# Clone the production foundation site database and clean it up
-# Requires the following environment variables:
-# HEROKU_API_KEY
-# PRODUCTION_APP_NAME
-# STAGING_APP_NAME
-# AWS_ACCESS_KEY_ID
-# AWS_SECRET_ACCESS_KEY
-# STAGING_S3_BUCKET
-# PRODUCTION_S3_BUCKET
-# STAGING_S3_PREFIX
-# PRODUCTION_S3_PREFIX
-# S3_REGION
+# Clone and scrub the production foundation site
 
 #  exit on error
 set -e
