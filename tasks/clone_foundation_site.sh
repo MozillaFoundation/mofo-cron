@@ -57,7 +57,7 @@ backup_download_url=`heroku pg:backups:url -a ${production_app}`
 heroku pg:backups:restore --confirm ${staging_app} -a ${staging_app} ${backup_download_url}
 
 echo "Executing cleanup SQL script.."
-psql ${staging_db} -f `realpath tasks/cleanup.sql`
+psql ${staging_db} -f ./tasks/cleanup.sql
 
 echo "Syncing S3 Buckets"
 aws s3 sync --region ${S3_REGION} s3://${PRODUCTION_S3_BUCKET}/${PRODUCTION_S3_PREFIX} s3://${STAGING_S3_BUCKET}/${STAGING_S3_PREFIX}
