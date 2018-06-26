@@ -59,13 +59,13 @@ heroku pg:backups:restore --confirm ${staging_app} -a ${staging_app} ${backup_do
 echo "Executing cleanup SQL script.."
 psql ${staging_db} -f `realpath tasks/cleanup.sql`
 
+echo "Syncing S3 Buckets"
+aws s3 sync --region ${S3_REGION} s3://${PRODUCTION_S3_BUCKET}/${PRODUCTION_S3_PREFIX} s3://${STAGING_S3_BUCKET}/${STAGING_S3_PREFIX}
+
 echo "Scaling web dynos on staging to 1..."
 heroku ps:scale -a ${staging_app} web=1
 
 echo "Disabling maintenance mode on staging.."
 heroku maintenance:off -a ${staging_app}
-
-echo "Syncing S3 Buckets"
-aws s3 sync --region ${S3_REGION} s3://${PRODUCTION_S3_BUCKET}/${PRODUCTION_S3_PREFIX} s3://${STAGING_S3_BUCKET}/${STAGING_S3_PREFIX}
 
 echo "restoration complete!"

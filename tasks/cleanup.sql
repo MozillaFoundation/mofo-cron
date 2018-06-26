@@ -9,7 +9,7 @@ DECLARE
     new_username varchar;
     counter integer := 1;
 BEGIN
---     Truncate the user table
+--     scrub the user table
     TRUNCATE django_session;
 
 --     scrub non-staff social auth data
@@ -38,6 +38,7 @@ BEGIN
           first_name = 'anony',
           last_name = 'mouse'
         Where id = user_row.id;
+
 --         Increase the counter
         counter := counter + 1;
     END LOOP;
