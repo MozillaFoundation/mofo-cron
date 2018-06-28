@@ -4,8 +4,10 @@
 
 on_exit() {
     RV=$?
-    if [ $RV -ne 0 ]; then
 
+    # If the script exits with a non-zero exit code, force a staging rollback and
+    # ensure that staging is not in maintenance mode or scaled down
+    if [ $RV -ne 0 ]; then
         echo "Rolling back staging..."
         heroku pg:backups:restore -a ${staging_app} --confirm ${staging_app}
 
@@ -24,18 +26,18 @@ on_exit() {
 trap 'on_exit' 0
 set -e
 
-current_dir=`pwd`
+current_dir=$(pwd)
 
 echo "Checking the day of the week..."
-DAYOFWEEK=`date +%u`
-if [ ${DAYOFWEEK} -ne 1 ]; then
+DAYOFWEEK=$(date +%u)
+if [ "${DAYOFWEEK}" -ne 4 ]; then
     echo "This task only executes on Mondays"
     exit 0
 else
     echo "Happy Monday! Beginning database transfer process..."
 fi
 
-if type `which heroku` > /dev/null; then
+if type $(which heroku) > /dev/null; then
     echo "Heroku CLI is already installed..."
 else
     echo "Downloading and extracting the standalone Heroku CLI tool..."
@@ -44,7 +46,7 @@ else
     alias heroku=${current_dir}/heroku/bin/heroku
 fi
 
-if type `which aws` > /dev/null; then
+if type $(which aws) > /dev/null; then
     echo "AWS cli is already installed..."
 else
     echo "Downloading and installing the AWS cli"
@@ -56,7 +58,7 @@ fi
 
 production_app=${PRODUCTION_APP_NAME}
 staging_app=${STAGING_APP_NAME}
-staging_db=`heroku config:get -a ${staging_app} DATABASE_URL`
+staging_db=$(heroku config:get -a ${staging_app} DATABASE_URL)
 
 echo "Enabling maintenance mode on the staging app..."
 heroku maintenance:on -a ${staging_app}
@@ -71,7 +73,7 @@ echo "Backing up staging DB..."
 heroku pg:backups:capture -a ${staging_app}
 
 echo "Restoring the latest Production backup to staging..."
-backup_download_url=`heroku pg:backups:url -a ${production_app}`
+backup_download_url=$(heroku pg:backups:url -a ${production_app})
 heroku pg:backups:restore --confirm ${staging_app} -a ${staging_app} ${backup_download_url}
 
 echo "Executing cleanup SQL script.."
