@@ -24,6 +24,7 @@ on_exit() {
 }
 
 trap 'on_exit' 0
+
 set -e
 
 current_dir=$(pwd)
@@ -37,7 +38,13 @@ else
     echo "Happy Monday! Beginning database transfer process..."
 fi
 
-if $(which heroku) == ""; then
+# temporarily disable automatic exit on non-zero exit code
+set +e
+
+HEROKU_BIN=$(command -v heroku)
+
+
+if [ "$?" -eq 0 ]; then
     echo "Heroku CLI is already installed..."
 else
     echo "Downloading and extracting the standalone Heroku CLI tool..."
@@ -46,7 +53,9 @@ else
     alias heroku=${current_dir}/heroku/bin/heroku
 fi
 
-if $(which aws) == ""; then
+AWS_BIN=$(command -v aws2)
+
+if [ "$?" -eq 0 ]; then
     echo "AWS cli is already installed..."
 else
     echo "Downloading and installing the AWS cli"
@@ -54,7 +63,11 @@ else
     unzip awscli-bundle.zip
     ./awscli-bundle/install -b ~/bin/aws
     export PATH=~/bin:${PATH}
+    echo $(which aws)
 fi
+
+# re-enable exit on non-zero exit code
+set -e
 
 production_app=${PRODUCTION_APP_NAME}
 staging_app=${STAGING_APP_NAME}
