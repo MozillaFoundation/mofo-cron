@@ -37,7 +37,7 @@ else
     echo "Happy Monday! Beginning database transfer process..."
 fi
 
-if type $(which heroku) > /dev/null; then
+if $(which heroku) == ""; then
     echo "Heroku CLI is already installed..."
 else
     echo "Downloading and extracting the standalone Heroku CLI tool..."
@@ -46,7 +46,7 @@ else
     alias heroku=${current_dir}/heroku/bin/heroku
 fi
 
-if type $(which aws) > /dev/null; then
+if $(which aws) == ""; then
     echo "AWS cli is already installed..."
 else
     echo "Downloading and installing the AWS cli"
