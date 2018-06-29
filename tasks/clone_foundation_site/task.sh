@@ -31,7 +31,7 @@ current_dir=$(pwd)
 
 echo "Checking the day of the week..."
 DAYOFWEEK=$(date +%u)
-if [ "${DAYOFWEEK}" -ne 4 ]; then
+if [ "${DAYOFWEEK}" -ne 1 ]; then
     echo "This task only executes on Mondays"
     exit 0
 else
