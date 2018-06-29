@@ -53,7 +53,7 @@ else
     alias heroku=${current_dir}/heroku/bin/heroku
 fi
 
-AWS_BIN=$(command -v aws2)
+AWS_BIN=$(command -v aws)
 
 if [ "$?" -eq 0 ]; then
     echo "AWS cli is already installed..."
