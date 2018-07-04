@@ -38,3 +38,20 @@ Additionally, ACCESS_KEY_ID and SECRET_ACCESS_KEY must be defined in the environ
     ]
 }
 ```
+
+### tasks/clone_foundation_site/task.sh
+
+This task copies the production foundation site data to staging, scrubbing the database of non-staff accounts and sessions during the process.
+
+Usage: `./tasks/clone_foundation_site/task.sh`
+
+The following environment variables must be defined:
+- `STAGING_APP_NAME` The target of the database restoration
+- `PRODUCTION_APP_NAME` The app whose database should be snapshotted for restoration
+- `AWS_ACCESS_KEY_ID` The AWS Access Key to use when snycing the S3 buckets
+- `AWS_SECRET_ACCESS_KEY` The AWS Secret Access Key to use when syncing the S3 buckets
+- `STAGING_S3_BUCKET` The target bucket for the sync step
+- `PRODUCTION_S3_BUCKET` The source bucket for the sync step
+- `STAGING_S3_PREFIX` The bucket prefix to use when syncing, for the target bucket
+- `PRODUCTION_S3_PREFIX` The bucket prefix to use when syncing, for the target bucket
+- `S3_REGION` The S3 region containing the bucket
