@@ -48,8 +48,8 @@ if [ "$?" -eq 0 ]; then
     echo "Heroku CLI is already installed..."
 else
     echo "Downloading and extracting the standalone Heroku CLI tool..."
-    curl "https://cli-assets.heroku.com/heroku-linux-x64.tar.xz" -o "heroku-linux-x64.tar.xz"
-    tar -xf heroku-linux-x64.tar.xz
+    curl "https://cli-assets.heroku.com/heroku-linux-x64.tar.gz" -o "heroku-linux-x64.tar.gz"
+    tar -xf heroku-linux-x64.tar.gz
     alias heroku=${current_dir}/heroku/bin/heroku
 fi
 
