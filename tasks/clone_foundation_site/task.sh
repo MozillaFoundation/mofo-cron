@@ -50,7 +50,7 @@ else
     echo "Downloading and extracting the standalone Heroku CLI tool..."
     curl "https://cli-assets.heroku.com/heroku-linux-x64.tar.gz" -o "heroku-linux-x64.tar.gz"
     tar -xf heroku-linux-x64.tar.gz
-    alias heroku=${current_dir}/heroku/bin/heroku
+    export PATH=~/heroku/bin:${PATH}
 fi
 
 AWS_BIN=$(command -v aws)
