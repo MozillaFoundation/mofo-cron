@@ -95,6 +95,9 @@ psql ${staging_db} -f ./tasks/clone_foundation_site/cleanup.sql
 echo "Syncing S3 Buckets"
 aws s3 sync --region ${S3_REGION} s3://${PRODUCTION_S3_BUCKET}/${PRODUCTION_S3_PREFIX} s3://${STAGING_S3_BUCKET}/${STAGING_S3_PREFIX}
 
+echo "Running migrations..."
+heroku run -a {staging_app} -- python network-api/manage.py migrate
+
 echo "Scaling web dynos on staging to 1..."
 heroku ps:scale -a ${staging_app} web=1
 
