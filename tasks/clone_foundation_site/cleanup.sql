@@ -1,3 +1,5 @@
+-- noinspection SqlNoDataSourceInspectionForFile
+
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE OR REPLACE FUNCTION clean_user_data()
@@ -12,8 +14,9 @@ BEGIN
 --     scrub the user table
     TRUNCATE django_session;
 
---     scrub non-staff social auth data
-    TRUNCATE social_auth_usersocialauth;
+--     clean up non-staff social auth data
+    DELETE FROM social_auth_usersocialauth
+    WHERE uid NOT LIKE '%@mozillafoundation.org';
 
 --     Update the site domain
     UPDATE django_site
