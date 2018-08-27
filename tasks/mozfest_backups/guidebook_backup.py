@@ -12,15 +12,24 @@ TIMESTAMP = datetime.now().strftime("%Y%m%d-%H%M")
 
 
 def get_guidebook_content(guidebook_resource):
-    resource_url = API_URL + guidebook_resource + f"/?guide={GUIDE_ID}"
+    if guidebook_resource == "guides":
+        resource_url = API_URL + guidebook_resource + f"/{GUIDE_ID}"
+    else:
+        resource_url = API_URL + guidebook_resource + f"/?guide={GUIDE_ID}"
+
     r = requests.get(resource_url, headers={"Authorization": "JWT " + API_KEY})
 
     data = r.json()
 
     # pagination
-    while r.json()["next"]:
-        r = requests.get(r.json()["next"], headers={"Authorization": "JWT " + API_KEY})
-        data.extend(r.json())
+    try:
+        while r.json()["next"]:
+            r = requests.get(
+                r.json()["next"], headers={"Authorization": "JWT " + API_KEY}
+            )
+            data.extend(r.json())
+    except KeyError:
+        print(f"{guidebook_resource} doesn't have a 'next' page.")
 
     return data
 
@@ -43,7 +52,7 @@ def upload_to_s3(guidebook_resource, json_content):
 
 
 if __name__ == "__main__":
-    guidebook_resources = ["sessions", "schedule-tracks", "locations"]
+    guidebook_resources = ["guides", "sessions", "schedule-tracks", "locations"]
 
     for resource in guidebook_resources:
         content = get_guidebook_content(resource)
