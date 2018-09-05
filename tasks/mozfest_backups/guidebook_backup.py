@@ -27,14 +27,21 @@ s3 = boto3.client(
 
 TIMESTAMP = datetime.now(tz=timezone.utc).strftime("%Y%m%d-%H%M")
 
+
+def get_time_diff(file):
+    now = datetime.now(tz=timezone.utc)
+    time_diff = now - file
+
+    return time_diff
+
+
 # Check metadata of the latest uploaded file for each type and alert if older than 3 hours
 def is_stale(guidebook_resource):
     data = s3.list_objects_v2(Bucket=S3_BUCKET, Prefix=guidebook_resource)["Contents"]
 
     latest_file = max(data, key=lambda o: o["LastModified"])
 
-    now = datetime.now(tz=timezone.utc)
-    time_diff = now - latest_file["LastModified"]
+    time_diff = get_time_diff(latest_file["LastModified"])
 
     if time_diff >= timedelta(hours=3):
         payload = {
@@ -55,6 +62,17 @@ def is_stale(guidebook_resource):
         print(
             f"Failure: the file '{latest_file['Key']}' was not updated for {time_diff}. An alert has been sent."
         )
+
+
+def delete_old_backups():
+    print("Deleting files that are older than 48h")
+    files = s3.list_objects_v2(Bucket=S3_BUCKET)["Contents"]
+
+    for file in files:
+        time_diff = get_time_diff(file["LastModified"])
+        if time_diff >= timedelta(days=2):
+            print(f"Deleting {file['Key']}")
+            s3.delete_object(Bucket=S3_BUCKET, Key=file["Key"])
 
 
 def get_guidebook_content(guidebook_resource):
@@ -87,8 +105,8 @@ def upload_to_s3(guidebook_resource, json_content):
     print(f"Uploaded {guidebook_resource} to S3.")
 
 
-# Alert: check for each file if timestamp is less than 3 hours
-# Cleanup back up: only keep 48h of data and wipe the rest.
+# TODO:
+# Refacto: only do 1 request to s3 and filter on it after
 
 # Rollback (separate file + made to be executed locally): do a diff on what's actually on guidebook (redo a dump of everything) and last backup.
 # Check if tracks, location, session are different.
@@ -103,6 +121,8 @@ def upload_to_s3(guidebook_resource, json_content):
 
 if __name__ == "__main__":
     guidebook_resources = ["guides", "sessions", "schedule-tracks", "locations"]
+
+    delete_old_backups()
 
     for resource in guidebook_resources:
         is_stale(resource)
