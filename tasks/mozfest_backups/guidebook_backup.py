@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime, timezone, timedelta
 import os
 
@@ -28,6 +29,10 @@ s3 = boto3.client(
 TIMESTAMP = datetime.now(tz=timezone.utc).strftime("%Y%m%d-%H%M")
 
 
+def get_bucket_content():
+    return s3.list_objects_v2(Bucket=S3_BUCKET)["Contents"]
+
+
 def get_time_diff(file):
     now = datetime.now(tz=timezone.utc)
     time_diff = now - file
@@ -35,11 +40,16 @@ def get_time_diff(file):
     return time_diff
 
 
-# Check metadata of the latest uploaded file for each type and alert if older than 3 hours
-def is_stale(guidebook_resource):
-    data = s3.list_objects_v2(Bucket=S3_BUCKET, Prefix=guidebook_resource)["Contents"]
+def filter_by_resources(file_list, guidebook_resource):
+    regex = re.compile(guidebook_resource)
+    filtered_list = [file for file in file_list if regex.match(file["Key"])]
 
-    latest_file = max(data, key=lambda o: o["LastModified"])
+    return filtered_list
+
+
+# Check metadata of the latest uploaded file for each type and alert if older than 3 hours
+def is_stale(file_list):
+    latest_file = max(file_list, key=lambda o: o["LastModified"])
 
     time_diff = get_time_diff(latest_file["LastModified"])
 
@@ -64,11 +74,10 @@ def is_stale(guidebook_resource):
         )
 
 
-def delete_old_backups():
+def delete_old_backups(file_list):
     print("Deleting files that are older than 48h")
-    files = s3.list_objects_v2(Bucket=S3_BUCKET)["Contents"]
 
-    for file in files:
+    for file in file_list:
         time_diff = get_time_diff(file["LastModified"])
         if time_diff >= timedelta(days=2):
             print(f"Deleting {file['Key']}")
@@ -106,8 +115,6 @@ def upload_to_s3(guidebook_resource, json_content):
 
 
 # TODO:
-# Refacto: only do 1 request to s3 and filter on it after
-
 # Rollback (separate file + made to be executed locally): do a diff on what's actually on guidebook (redo a dump of everything) and last backup.
 # Check if tracks, location, session are different.
 # Do a intersection set with session IDs + diff
@@ -122,9 +129,11 @@ def upload_to_s3(guidebook_resource, json_content):
 if __name__ == "__main__":
     guidebook_resources = ["guides", "sessions", "schedule-tracks", "locations"]
 
-    delete_old_backups()
+    bucket_content = get_bucket_content()
+    delete_old_backups(bucket_content)
 
     for resource in guidebook_resources:
-        is_stale(resource)
-        content = get_guidebook_content(resource)
-        upload_to_s3(resource, content)
+        filtered_content = filter_by_resources(bucket_content, resource)
+        is_stale(filtered_content)
+        guidebook_content = get_guidebook_content(resource)
+        upload_to_s3(resource, guidebook_content)
