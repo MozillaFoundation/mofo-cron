@@ -1,11 +1,14 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import os
 
 import requests
 import boto3
 
-# GuideBook config
+# VictorOps configuration
+VICTOROPS_KEY = os.environ["VICTOROPS_KEY"]
+
+# GuideBook configuration
 API_URL = "https://builder.guidebook.com/open-api/v1/"
 API_KEY = os.environ["GUIDEBOOK_KEY"]
 GUIDE_ID = os.environ["GUIDE_ID"]
@@ -22,7 +25,36 @@ s3 = boto3.client(
 )
 
 
-TIMESTAMP = datetime.now().strftime("%Y%m%d-%H%M")
+TIMESTAMP = datetime.now(tz=timezone.utc).strftime("%Y%m%d-%H%M")
+
+# Check metadata of the latest uploaded file for each type and alert if older than 3 hours
+def is_stale(guidebook_resource):
+    data = s3.list_objects_v2(Bucket=S3_BUCKET, Prefix=guidebook_resource)["Contents"]
+
+    latest_file = max(data, key=lambda o: o["LastModified"])
+
+    now = datetime.now(tz=timezone.utc)
+    time_diff = now - latest_file["LastModified"]
+
+    if time_diff >= timedelta(hours=3):
+        payload = {
+            "message_type": "CRITICAL",
+            "entity_id": "MozfestBackupScript",
+            "entity_display_name": f"Mozfest backup task failed: {latest_file['Key']} was not updated for {time_diff}",
+            "state_message": f"The scheduled task in charge of Mozfest Guidebook backups failed: {latest_file['Key']} "
+            f"was not updated for {time_diff}."
+            f"This task is running on the Heroku app 'mofo-cron' and is a 'clock' process."
+            f"Backups are uploaded to S3, in the '{S3_BUCKET}' bucket in mofo-project."
+            f"Logs are available on Logentries: "
+            f"https://eu.logentries.com/app/3aae5f3f#/search/log/628eb861?last=Last%2020%20Minutes",
+        }
+        requests.post(
+            f"https://alert.victorops.com/integrations/generic/20131114/alert/{VICTOROPS_KEY}",
+            json=payload,
+        )
+        print(
+            f"Failure: the file '{latest_file['Key']}' was not updated for {time_diff}. An alert has been sent."
+        )
 
 
 def get_guidebook_content(guidebook_resource):
@@ -73,5 +105,6 @@ if __name__ == "__main__":
     guidebook_resources = ["guides", "sessions", "schedule-tracks", "locations"]
 
     for resource in guidebook_resources:
+        is_stale(resource)
         content = get_guidebook_content(resource)
         upload_to_s3(resource, content)
