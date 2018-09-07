@@ -13,6 +13,7 @@ VICTOROPS_KEY = os.environ["VICTOROPS_KEY"]
 API_URL = "https://builder.guidebook.com/open-api/v1/"
 API_KEY = os.environ["GUIDEBOOK_KEY"]
 GUIDE_ID = os.environ["GUIDE_ID"]
+# todo: add full API url for guide + others
 
 # AWS configuration
 AWS_ACCESS_KEY_ID = os.environ["MOZFEST_AWS_ACCESS_KEY_ID"]
@@ -85,30 +86,45 @@ def delete_old_backups(file_list):
 
 
 def get_guidebook_content(guidebook_resource):
+    # Guides don't have 'next' or 'results' keys
     if guidebook_resource == "guides":
         resource_url = API_URL + guidebook_resource + f"/{GUIDE_ID}"
+        r = requests.get(resource_url, headers={"Authorization": "JWT " + API_KEY})
+        return r.json()
+
     else:
         resource_url = API_URL + guidebook_resource + f"/?guide={GUIDE_ID}"
+        r = requests.get(resource_url, headers={"Authorization": "JWT " + API_KEY})
+        data = r.json()["results"]
 
-    r = requests.get(resource_url, headers={"Authorization": "JWT " + API_KEY})
-
-    data = r.json()
-
-    # pagination
-    try:
+        # pagination
         while r.json()["next"]:
             r = requests.get(
                 r.json()["next"], headers={"Authorization": "JWT " + API_KEY}
             )
-            data.extend(r.json())
-    except KeyError:
-        print(f"{guidebook_resource} doesn't have a 'next' page.")
+            data.extend(r.json()["results"])
 
-    return data
+        return data
 
 
 def upload_to_s3(guidebook_resource, json_content):
     filename = f"{guidebook_resource}-{TIMESTAMP}.json"
-    data = json.dumps(json_content, sort_keys=True, indent=4).encode()
+    data = json.dumps(json_content).encode()
     s3.put_object(Bucket=S3_BUCKET, Key=filename, Body=data)
     print(f"Uploaded {guidebook_resource} to S3.")
+
+
+def upload_to_guidebook(backup, guidebook_resource):
+    if guidebook_resource == "guides":
+        resource_url = API_URL + guidebook_resource + f"/{GUIDE_ID}/"
+        requests.patch(
+            resource_url, headers={"Authorization": "JWT " + API_KEY}, json=backup
+        )
+    else:
+        for e in backup:
+            resource_url = API_URL + guidebook_resource + f"/{e['id']}/"
+            requests.patch(
+                resource_url, headers={"Authorization": "JWT " + API_KEY}, data=e
+            )
+
+    print(f"rollback of {guidebook_resource} done!")

@@ -4,9 +4,11 @@ from utilities import (
     filter_by_resources,
     get_guidebook_content,
     is_stale,
-    upload_to_s3)
+    upload_to_s3,
+)
 
 
+# put this in an env var
 guidebook_resources = ["guides", "sessions", "schedule-tracks", "locations"]
 
 # Get the bucket content and delete backups older than 2 days
