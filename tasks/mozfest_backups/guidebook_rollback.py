@@ -1,11 +1,15 @@
+from copy import deepcopy
 import json
 import os
+
 from utilities import (
     get_bucket_content,
     filter_by_resources,
     s3,
     get_guidebook_content,
-    upload_to_guidebook,
+    patch_guide,
+    patch_guidebook_content,
+    restore_guidebook_content,
 )
 
 S3_BUCKET = os.environ["MOZFEST_S3_BUCKET"]
@@ -22,6 +26,66 @@ def get_backup_content(backups_list):
     return backup_file_content
 
 
+def remove_metadata(entry):
+    metadata = ["id", "import_id", "created_at"]
+    for m in metadata:
+        try:
+            del entry[m]
+        # All guidebook resources don't have import_id
+        except KeyError:
+            pass
+
+
+#
+def is_different(backup, guidebook_data, resource_name):
+    if resource_name == "guides":
+        if backup == guidebook_data:
+            print(
+                f"No rollback necessary for {resource_name}: No difference found between current data and backups."
+            )
+        else:
+            patch_guide(backup)
+    else:
+        # Create a copy and remove metadata: we don't want to alter the original dicts because we will need some of those metadata if the backup and the data on Guidebook are different
+        backup_without_metadata = deepcopy(backup)
+        guidebook_data_without_metadata = deepcopy(guidebook_data)
+
+        for e in backup_without_metadata:
+            remove_metadata(e)
+        for e in guidebook_data_without_metadata:
+            remove_metadata(e)
+
+        if backup_without_metadata == guidebook_data_without_metadata:
+            print(
+                f"No rollback necessary for {resource_name}: No difference found between current data and backups."
+            )
+        else:
+            # Id field converted to string to make it comparable with "import_id"
+            guidebook_elements_by_id = {
+                (str(e["import_id"]) if e.get("import_id") else str(e["id"])): e
+                for e in guidebook_data
+            }
+
+            for backup_element in backup:
+                element_id = str(backup_element["id"])
+
+                if element_id in guidebook_elements_by_id:
+                    guidebook_element = guidebook_elements_by_id[element_id]
+                    guidebook_element_id = guidebook_element["id"]
+
+                    remove_metadata(guidebook_element)
+                    remove_metadata(backup_element)
+
+                    if guidebook_element == backup_element:
+                        pass
+                    else:
+                        patch_guidebook_content(
+                            guidebook_element_id, resource_name, backup_element
+                        )
+                else:
+                    restore_guidebook_content(element_id, resource_name, backup_element)
+
+
 if __name__ == "__main__":
     # get files from S3
     backups_s3 = get_bucket_content()
@@ -32,13 +96,7 @@ if __name__ == "__main__":
         all_backups = filter_by_resources(backups_s3, resource)
         guidebook_backup = get_backup_content(all_backups)
         guidebook_current_data = get_guidebook_content(resource)
-        if guidebook_backup == guidebook_current_data:
-            print(
-                f"No rollback necessary for {resource}: No difference found between current data and backups."
-            )
-        else:
-            upload_to_guidebook(guidebook_backup, resource, guidebook_current_data)
-
+        is_different(guidebook_backup, guidebook_current_data, resource)
 
 #  TODO:
 # chose which backup we want to rollback to.

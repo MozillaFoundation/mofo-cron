@@ -13,7 +13,6 @@ VICTOROPS_KEY = os.environ["VICTOROPS_KEY"]
 API_URL = "https://builder.guidebook.com/open-api/v1/"
 API_KEY = os.environ["GUIDEBOOK_KEY"]
 GUIDE_ID = os.environ["GUIDE_ID"]
-# todo: add full API url for guide + others
 
 # AWS configuration
 AWS_ACCESS_KEY_ID = os.environ["MOZFEST_AWS_ACCESS_KEY_ID"]
@@ -118,52 +117,28 @@ def upload_to_s3(guidebook_resource, json_content, rollback=False):
     print(f"Uploaded {guidebook_resource} to S3.")
 
 
-def upload_to_guidebook(backup, guidebook_resource, guidebook_data):
-    if guidebook_resource == "guides":
-        resource_url = API_URL + guidebook_resource + f"/{GUIDE_ID}/"
-        requests.patch(
-            resource_url, headers={"Authorization": "JWT " + API_KEY}, json=backup
-        ).raise_for_status()
-    else:
-        # Id field converted to string to make it comparable with "import_id"
-        guidebook_elements_by_id = {
-            (str(e["import_id"]) if e.get("import_id") else str(e["id"])): e
-            for e in guidebook_data
-        }
+def patch_guide(backup):
+    resource_url = API_URL + f"guides/{GUIDE_ID}/"
+    requests.patch(
+        resource_url, headers={"Authorization": "JWT " + API_KEY}, json=backup
+    ).raise_for_status()
+    print(f"rollback of {guidebook_resource} done!")
 
-        for backup_element in backup:
-            element_id = str(backup_element["id"])
 
-            if element_id in guidebook_elements_by_id:
-                guidebook_element = guidebook_elements_by_id[element_id]
-                guidebook_element_id = guidebook_element["id"]
+def patch_guidebook_content(guidebook_element_id, guidebook_resource, backup_element):
+    print(f"updating data for {guidebook_element_id}")
+    resource_url = API_URL + guidebook_resource + f"/{guidebook_element_id}/"
+    requests.patch(
+        resource_url, headers={"Authorization": "JWT " + API_KEY}, data=backup_element
+    ).raise_for_status()
+    print(f"rollback of {guidebook_resource} done!")
 
-                # Remove metadata fields to prevent to create duplicates
-                metadata = ["id", "import_id", "created_at"]
-                for e in metadata:
-                    del guidebook_element[e]
-                    del backup_element[e]
 
-                if guidebook_element == backup_element:
-                    pass
-                else:
-                    print(f"updating data for {guidebook_element_id}")
-                    resource_url = (
-                        API_URL + guidebook_resource + f"/{guidebook_element_id}/"
-                    )
-                    requests.patch(
-                        resource_url,
-                        headers={"Authorization": "JWT " + API_KEY},
-                        data=backup_element,
-                    ).raise_for_status()
-            else:
-                print(f"Sending data {element_id}")
-                backup_element["import_id"] = element_id
-                resource_url = API_URL + guidebook_resource + "/"
-                requests.post(
-                    resource_url,
-                    headers={"Authorization": "JWT " + API_KEY},
-                    data=backup_element,
-                ).raise_for_status()
-
+def restore_guidebook_content(element_id, guidebook_resource, backup_element):
+    print(f"Sending data {element_id}")
+    backup_element["import_id"] = element_id
+    resource_url = API_URL + guidebook_resource + "/"
+    requests.post(
+        resource_url, headers={"Authorization": "JWT " + API_KEY}, data=backup_element
+    ).raise_for_status()
     print(f"rollback of {guidebook_resource} done!")
