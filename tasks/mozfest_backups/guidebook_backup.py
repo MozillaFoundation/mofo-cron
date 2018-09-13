@@ -24,10 +24,13 @@ def cleanup():
         is_stale(filtered_previous_backups)
 
 
-def do_backup():
+def do_backup(rollback=False):
     for resource in guidebook_resources:
         guidebook_data = get_guidebook_content(resource)
-        upload_to_s3(resource, guidebook_data)
+        if rollback:
+            upload_to_s3(resource, guidebook_data, rollback=True)
+        else:
+            upload_to_s3(resource, guidebook_data)
 
 
 if __name__ == "__main__":

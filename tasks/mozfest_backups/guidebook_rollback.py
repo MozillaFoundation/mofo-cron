@@ -2,6 +2,7 @@ from copy import deepcopy
 import json
 import os
 
+from guidebook_backup import do_backup
 from utilities import (
     get_bucket_content,
     filter_by_resources,
@@ -91,6 +92,7 @@ if __name__ == "__main__":
     backups_s3 = get_bucket_content()
 
     # Backup data from guidebook before initiating the rollback
+    do_backup(rollback=True)
 
     for resource in guidebook_resources:
         all_backups = filter_by_resources(backups_s3, resource)
