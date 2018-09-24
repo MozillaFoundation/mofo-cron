@@ -6,6 +6,8 @@ import os
 import requests
 import boto3
 
+import attr
+
 # VictorOps configuration
 VICTOROPS_KEY = os.environ["VICTOROPS_KEY"]
 
@@ -25,15 +27,28 @@ s3 = boto3.client(
     aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
 )
 
-
+# Used to create backups' file name
 TIMESTAMP = datetime.now(tz=timezone.utc).strftime("%Y%m%d-%H%M")
 
 
 def get_bucket_content():
+    """
+    Get a list of all the files available on S3 in this bucket.
+
+    :return: List of backups available on S3
+    """
+
     return s3.list_objects_v2(Bucket=S3_BUCKET)["Contents"]
 
 
 def get_time_diff(file):
+    """
+    Get the time difference between now and the `last_modified` metadata from the S3 file
+
+    :param file: Backup on S3
+    :return: Datetime object
+    """
+
     now = datetime.now(tz=timezone.utc)
     time_diff = now - file
 
@@ -41,6 +56,14 @@ def get_time_diff(file):
 
 
 def filter_by_resources(file_list, guidebook_resource):
+    """
+    Filter a list of S3 files by Guidebook resource type.
+
+    :param file_list: List of all files on S3
+    :param guidebook_resource: Guidebook resource type. Can be "guides", "sessions", "schedule-tracks" or "locations"
+    :return: A list of files filtered by the Guidebook resource type passed in param
+    """
+
     regex = re.compile(guidebook_resource)
     filtered_list = [file for file in file_list if regex.match(file["Key"])]
 
@@ -49,6 +72,14 @@ def filter_by_resources(file_list, guidebook_resource):
 
 # Check metadata of the latest uploaded file for each type and alert if older than 3 hours
 def is_stale(file_list):
+    """
+    Check if the file was uploaded less than 3 hours ago. If not, posted an alert in #mofo-mozfest-backup slack
+    channel.
+
+    :param file_list: List of backup files
+    :return:
+    """
+
     latest_file = max(file_list, key=lambda o: o["LastModified"])
 
     time_diff = get_time_diff(latest_file["LastModified"])
@@ -75,6 +106,13 @@ def is_stale(file_list):
 
 
 def delete_old_backups(file_list):
+    """
+    Delete backups that are older than 48h.
+
+    :param file_list: List of backups on S3
+    :return:
+    """
+
     print("Deleting files that are older than 48h")
 
     for file in file_list:
@@ -85,6 +123,13 @@ def delete_old_backups(file_list):
 
 
 def get_guidebook_content(guidebook_resource):
+    """
+    Get content (sessions, tracks, etc) from Guidebook.
+
+    :param guidebook_resource: Guidebook resources type. Can be "guides", "sessions", "schedule-tracks" or "locations"
+    :return: Content from guidebook (dict)
+    """
+
     # Guides don't have 'next' or 'results' keys
     if guidebook_resource == "guides":
         resource_url = API_URL + guidebook_resource + f"/{GUIDE_ID}"
@@ -107,8 +152,17 @@ def get_guidebook_content(guidebook_resource):
 
 
 def upload_to_s3(guidebook_resource, json_content, rollback=False):
+    """
+    Upload data from Guidebook to a S3 bucket.
+
+    :param guidebook_resource: Guidebook resources type. Can be "guides", "sessions", "schedule-tracks" or "locations"
+    :param json_content: Guidebook content
+    :param rollback: If True, add `before-rollback` in front of the file name.
+    :return:
+    """
+
     if rollback:
-        filename = f"{guidebook_resource}-{TIMESTAMP}-before-rollback.json"
+        filename = f"before-rollback-{guidebook_resource}-{TIMESTAMP}.json"
     else:
         filename = f"{guidebook_resource}-{TIMESTAMP}.json"
 
@@ -117,28 +171,126 @@ def upload_to_s3(guidebook_resource, json_content, rollback=False):
     print(f"Uploaded {guidebook_resource} to S3.")
 
 
-def patch_guide(backup):
-    resource_url = API_URL + f"guides/{GUIDE_ID}/"
-    requests.patch(
-        resource_url, headers={"Authorization": "JWT " + API_KEY}, json=backup
-    ).raise_for_status()
-    print(f"rollback of {guidebook_resource} done!")
+# Some fields are optional on guidebook's website, but get rejected as a payload to the api.
+# TODO: put fields
+def replace_none_fields(guidebook_entry):
+    """
+    Upload to guidebook can't be rejected if certain fields are at None. We replace those None by an empty string.
+
+    :param guidebook_entry: Element that will be uploaded to Guidebook
+    :return:
+    """
+
+    fields_to_validate = ["description_html", ""]
+    for f in guidebook_entry:
+        if f in fields_to_validate:
+            if not guidebook_entry[f]:
+                guidebook_entry[f] = ""
 
 
-def patch_guidebook_content(guidebook_element_id, guidebook_resource, backup_element):
-    print(f"updating data for {guidebook_element_id}")
-    resource_url = API_URL + guidebook_resource + f"/{guidebook_element_id}/"
-    requests.patch(
-        resource_url, headers={"Authorization": "JWT " + API_KEY}, data=backup_element
-    ).raise_for_status()
-    print(f"rollback of {guidebook_resource} done!")
+# TODO
+def replace_locations(session, locations_old_and_new_ids):
+    """
+    Sessions contain location ids. Restored location get a new id: we need to update the location id in sessions to
+    reflect that.
+
+    :param session:
+    :param locations_old_and_new_ids:
+    :return:
+    """
+
+    # create a dict with the new and old ids: if the old ids contains a new ids, replace that value by the new one.
+
+    pass
 
 
-def restore_guidebook_content(element_id, guidebook_resource, backup_element):
-    print(f"Sending data {element_id}")
-    backup_element["import_id"] = element_id
-    resource_url = API_URL + guidebook_resource + "/"
-    requests.post(
-        resource_url, headers={"Authorization": "JWT " + API_KEY}, data=backup_element
-    ).raise_for_status()
-    print(f"rollback of {guidebook_resource} done!")
+# TODO
+def drop_schedule_tracks(session):
+    """
+    Deleted schedule tracks get new ids when uploaded again: we won't be able to restore a session because the
+    previous id will be missing. Since schedule_tracks don't have an import_id, we drop the content from that field
+    if the schedule tracks id doesn't exist anymore.
+
+    :param session:
+    :return:
+    """
+
+    # do a list with all the schedule tracks id. Check if id is in the list or not: if not, remove that element from
+    #  the list.
+
+    pass
+
+
+
+@attr.s
+class PatchGuideDescription(object):
+    """
+    Guides objects are different from other guidebook resources: they can't be created or deleted through the API.
+    We can only `PATCH` them.
+    """
+
+    backup = attr.ib()
+
+    def execute(self):
+        print(f"updating data for guide")
+        resource_url = API_URL + f"guides/{GUIDE_ID}/"
+        requests.patch(
+            resource_url, headers={"Authorization": "JWT " + API_KEY}, json=self.backup
+        ).raise_for_status()
+
+
+@attr.s
+class PatchGuidebookContent(object):
+    """
+    `PATCH` a Guidebook element. Each element is composed of its Guidebook ID, a resource type (session,
+    track, location) and a backup.
+    """
+
+    guidebook_element_id = attr.ib()
+    guidebook_resource_name = attr.ib()
+    backup_element = attr.ib()
+
+    def execute(self):
+        print(
+            f"updating data for ID: {self.guidebook_element_id} ({self.guidebook_resource_name})"
+        )
+        # Todo fix that
+        # replace_none_fields(self.backup_element)
+        resource_url = (
+            API_URL + self.guidebook_resource_name + f"/{self.guidebook_element_id}/"
+        )
+        r = requests.patch(
+            resource_url,
+            headers={"Authorization": "JWT " + API_KEY},
+            data=self.backup_element,
+        )
+        print(r.headers, r.content)
+        # TODO: replace that print by ".raise_for_status()
+
+
+@attr.s
+class RestoreGuidebookContent(object):
+    """
+    Restore a Guidebook element that was removed. The element gains an import ID to avoid duplicate if we apply
+    multiple rollbacks.
+
+    Each Guidebook element is composed of an ID, a resource type (session, track, location) and a backup.
+    """
+
+    element_id = attr.ib()
+    guidebook_resource = attr.ib()
+    backup_element = attr.ib()
+
+    def execute(self):
+        print(f"Sending data for ID: {self.element_id} ({self.guidebook_resource})")
+        self.backup_element["import_id"] = self.element_id
+        # TODO fix it
+        # replace_none_fields(guidebook_resource)
+        resource_url = API_URL + self.guidebook_resource + "/"
+        r = requests.post(
+            resource_url,
+            headers={"Authorization": "JWT " + API_KEY},
+            data=self.backup_element,
+        )
+        print(r.headers, r.content)
+        # TODO: replace that print by ".raise_for_status()

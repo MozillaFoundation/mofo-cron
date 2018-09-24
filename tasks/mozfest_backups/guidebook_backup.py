@@ -13,6 +13,11 @@ guidebook_resources = ["guides", "sessions", "schedule-tracks", "locations"]
 
 
 def cleanup():
+    """
+    Initiate deletion of old backups and send alert if necessary.
+
+    :return:
+    """
     s3_previous_backups = get_bucket_content()
 
     # Delete backups on S3 that are older than 2 days
@@ -25,6 +30,12 @@ def cleanup():
 
 
 def do_backup(rollback=False):
+    """
+    Initiate getting data from Guidebook and uploading it to a bucket on S3.
+
+    :param rollback: If at True, add `before-rollback-` in the file name
+    :return:
+    """
     for resource in guidebook_resources:
         guidebook_data = get_guidebook_content(resource)
         if rollback:
