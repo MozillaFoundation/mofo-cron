@@ -55,3 +55,23 @@ The following environment variables must be defined:
 - `STAGING_S3_PREFIX` The bucket prefix to use when syncing, for the target bucket
 - `PRODUCTION_S3_PREFIX` The bucket prefix to use when syncing, for the target bucket
 - `S3_REGION` The S3 region containing the bucket
+
+### tasks/mozfest_backups
+
+This task create a hourly backup of Mozfest Guidebook. It gets content for `sessions`, `schedule-tracks`, `guides`, `locations` and upload it to a S3 bucket.
+
+Dependencies listed on `Pipefile`.
+
+Usage: `python ./tasks/mozfest_backups/guidebook_backup.py`
+
+The following environment variables must be defined:
+- `GUIDEBOOK_KEY` The Guidebook API key
+- `GUIDE_ID` The Guidebook guide id: determines which guide will be backup or restored
+- `MOZFEST_AWS_ACCESS_KEY_ID` The AWS Access Key to use when uploading, getting or deleting content from S3 bucket
+- `MOZFEST_AWS_SECRET_ACCESS_KEY` The AWS Secret Access Key to use when uploading, getting or deleting content from S3 bucket
+- `MOZFEST_S3_BUCKET` The bucket where backups are uploaded
+- `VICTOROPS_KEY` VictorOps webhook and integration to Slack
+
+#### Rollback
+
+TODO
