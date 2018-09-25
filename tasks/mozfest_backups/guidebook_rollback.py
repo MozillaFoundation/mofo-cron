@@ -1,7 +1,6 @@
 from copy import deepcopy
 import json
 import os
-from pprint import pprint
 
 from utilities import (
     get_bucket_content,
@@ -138,6 +137,8 @@ def prepare_data_to_rollback():
     :return: List of changes to upload to Guidebook
     """
 
+    # "Sessions" needs to be last: we need to update "sessions" fields with changes made in "schedule tracks" and
+    # "locations".
     guidebook_resources = ["guides", "schedule-tracks", "locations", "sessions"]
 
     # Get all backups from S3
@@ -173,12 +174,12 @@ def do_rollback(rollback_data):
 
     for guidebook_resource_type in rollback_data:
         for modification_to_apply in guidebook_resource_type:
-            pprint(modification_to_apply)
             modification_to_apply.execute()
 
 
 if __name__ == "__main__":
     # Backup data from guidebook before initiating the rollback
+    # TODO uncomment
     # do_backup(rollback=True)
 
     # Select backup data that needs to be restored
@@ -192,7 +193,5 @@ if __name__ == "__main__":
     print(modifications_list)
 
 #  TODO:
-# Need an index of changed ID for location and scheduled track
 # chose which backup we want to rollback to.
 # Need a CLI for people to run the rollback!
-# Check that data is valid before sending it to guidebook: check for each resources which fields can be empty or not.

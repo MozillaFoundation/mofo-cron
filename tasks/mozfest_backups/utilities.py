@@ -171,40 +171,33 @@ def upload_to_s3(guidebook_resource, json_content, rollback=False):
     print(f"Uploaded {guidebook_resource} to S3.")
 
 
-# Some fields are optional on guidebook's website, but get rejected as a payload to the api.
-# TODO: put fields
-def replace_none_fields(guidebook_entry):
+def fill_description_field(session):
     """
-    Upload to guidebook can't be rejected if certain fields are at None. We replace those None by an empty string.
+    Sessions' description can be empty on Guidebook website but can't be if you upload them using the API. The field
+    can't be None or empty but we don't want to put a placeholder content that might never get changed. Instead,
+    we use an empty paragraph html: it's not considered empty by Guidebook but it is for us.
 
-    :param guidebook_entry: Element that will be uploaded to Guidebook
+    :param session: Element that will be uploaded to Guidebook
     :return:
     """
 
-    fields_to_validate = ["description_html", ""]
-    for f in guidebook_entry:
-        if f in fields_to_validate:
-            if not guidebook_entry[f]:
-                guidebook_entry[f] = ""
+    if not session["description_html"]:
+        session["description_html"] = "<p></p>"
 
 
-# TODO
-def replace_locations(session, locations_old_and_new_ids):
+def drop_locations(session):
     """
-    Sessions contain location ids. Restored location get a new id: we need to update the location id in sessions to
-    reflect that.
+    Sessions can't be restored if they contain an location_id that doesn't exist anymore. It would have been nice to
+    update to the newest id but let's drop that field for now.
 
-    :param session:
-    :param locations_old_and_new_ids:
+    :param session: Mozfest session
     :return:
     """
 
-    # create a dict with the new and old ids: if the old ids contains a new ids, replace that value by the new one.
+    if session["locations"]:
+        session["locations"] = []
 
-    pass
 
-
-# TODO
 def drop_schedule_tracks(session):
     """
     Deleted schedule tracks get new ids when uploaded again: we won't be able to restore a session because the
@@ -218,8 +211,8 @@ def drop_schedule_tracks(session):
     # do a list with all the schedule tracks id. Check if id is in the list or not: if not, remove that element from
     #  the list.
 
-    pass
-
+    if session["schedule_tracks"]:
+        session["schedule_tracks"] = []
 
 
 @attr.s
@@ -254,18 +247,20 @@ class PatchGuidebookContent(object):
         print(
             f"updating data for ID: {self.guidebook_element_id} ({self.guidebook_resource_name})"
         )
-        # Todo fix that
-        # replace_none_fields(self.backup_element)
+
+        if self.guidebook_resource_name == "sessions":
+            fill_description_field(self.backup_element)
+            drop_locations(self.backup_element)
+            drop_schedule_tracks(self.backup_element)
+
         resource_url = (
             API_URL + self.guidebook_resource_name + f"/{self.guidebook_element_id}/"
         )
-        r = requests.patch(
+        requests.patch(
             resource_url,
             headers={"Authorization": "JWT " + API_KEY},
             data=self.backup_element,
-        )
-        print(r.headers, r.content)
-        # TODO: replace that print by ".raise_for_status()
+        ).raise_for_status()
 
 
 @attr.s
@@ -278,19 +273,23 @@ class RestoreGuidebookContent(object):
     """
 
     element_id = attr.ib()
-    guidebook_resource = attr.ib()
+    guidebook_resource_name = attr.ib()
     backup_element = attr.ib()
 
     def execute(self):
-        print(f"Sending data for ID: {self.element_id} ({self.guidebook_resource})")
+        print(
+            f"Sending data for ID: {self.element_id} ({self.guidebook_resource_name})"
+        )
         self.backup_element["import_id"] = self.element_id
-        # TODO fix it
-        # replace_none_fields(guidebook_resource)
-        resource_url = API_URL + self.guidebook_resource + "/"
-        r = requests.post(
+
+        if self.guidebook_resource_name == "sessions":
+            fill_description_field(self.backup_element)
+            drop_locations(self.backup_element)
+            drop_schedule_tracks(self.backup_element)
+
+        resource_url = API_URL + self.guidebook_resource_name + "/"
+        requests.post(
             resource_url,
             headers={"Authorization": "JWT " + API_KEY},
             data=self.backup_element,
-        )
-        print(r.headers, r.content)
-        # TODO: replace that print by ".raise_for_status()
+        ).raise_for_status()
