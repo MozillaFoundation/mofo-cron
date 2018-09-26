@@ -1,3 +1,5 @@
+import csv
+import io
 import json
 import re
 from datetime import datetime, timezone, timedelta
@@ -293,3 +295,47 @@ class RestoreGuidebookContent(object):
             headers={"Authorization": "JWT " + API_KEY},
             data=self.backup_element,
         ).raise_for_status()
+
+
+def write_csv(list_of_changes):
+    """
+    Take a list of rolled-back Guidebook elements and convert it in csv.
+
+    :param list_of_changes: list of rolled-back Guidebook elements
+    :return:
+    """
+
+    rows = []
+    first_row = ["Type", "name"]
+    rows.append(first_row)
+
+    for guidebook_resources_type in list_of_changes:
+        for e in guidebook_resources_type:
+            if e:
+                row = [e.guidebook_resource_name, e.backup_element["name"]]
+                rows.append(row)
+
+    data_to_upload = io.StringIO()
+
+    csvwriter = csv.writer(
+        data_to_upload, delimiter=",", quotechar="|", quoting=csv.QUOTE_MINIMAL
+    )
+
+    csvwriter.writerows(rows)
+
+    return data_to_upload.getvalue()
+
+
+def upload_csv_to_s3(data):
+    """
+    Upload a csv file to S3 containing the name and type of rolled-back Guidebook elements.
+
+    :param data: String of rolled back Guidebook elements.
+    :return:
+    """
+
+    filename = f"entries-modified-{TIMESTAMP}.csv"
+
+    print(f"Uploading {filename} to {S3_BUCKET}")
+    s3.put_object(Bucket=S3_BUCKET, Key=filename, Body=data)
+    print("Upload done!")

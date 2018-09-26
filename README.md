@@ -70,7 +70,7 @@ The following environment variables must be defined:
 - `MOZFEST_AWS_ACCESS_KEY_ID` The AWS Access Key to use when uploading, getting or deleting content from S3 bucket
 - `MOZFEST_AWS_SECRET_ACCESS_KEY` The AWS Secret Access Key to use when uploading, getting or deleting content from S3 bucket
 - `MOZFEST_S3_BUCKET` The bucket where backups are uploaded
-- `VICTOROPS_KEY` VictorOps webhook and integration to Slack
+- `VICTOROPS_KEY` VictorOps routing key
 
 #### Rollback
 

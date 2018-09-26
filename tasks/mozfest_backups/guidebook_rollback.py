@@ -10,6 +10,8 @@ from utilities import (
     PatchGuidebookContent,
     PatchGuideDescription,
     RestoreGuidebookContent,
+    write_csv,
+    upload_csv_to_s3,
 )
 
 S3_BUCKET = os.environ["MOZFEST_S3_BUCKET"]
@@ -188,9 +190,10 @@ if __name__ == "__main__":
     # Apply all the changes to Guidebook
     do_rollback(modifications_list)
 
-    # Todo: do csv
     # Upload a csv of all changes that were applied
-    print(modifications_list)
+    modifications_csv = write_csv(modifications_list)
+    upload_csv_to_s3(modifications_csv)
+
 
 #  TODO:
 # chose which backup we want to rollback to.
