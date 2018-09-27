@@ -37,10 +37,13 @@ def get_bucket_content():
     """
     Get a list of all the files available on S3 in this bucket.
 
-    :return: List of backups available on S3
+    :return: List of backups available on S3 or an empty list if the bucket is empty
     """
 
-    return s3.list_objects_v2(Bucket=S3_BUCKET)["Contents"]
+    try:
+        return s3.list_objects_v2(Bucket=S3_BUCKET)["Contents"]
+    except KeyError:
+        return []
 
 
 def get_time_diff(file):
@@ -290,14 +293,11 @@ class RestoreGuidebookContent(object):
             drop_schedule_tracks(self.backup_element)
 
         resource_url = API_URL + self.guidebook_resource_name + "/"
-        r = requests.post(
+        requests.post(
             resource_url,
             headers={"Authorization": "JWT " + API_KEY},
             data=self.backup_element,
-        )
-        print("Content:", r.content)
-        r.raise_for_status()
-        # todo .raise_for_status()
+        ).raise_for_status()
 
 
 def write_csv(list_of_changes):
