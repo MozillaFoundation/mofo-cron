@@ -58,11 +58,12 @@ The following environment variables must be defined:
 
 ### tasks/mozfest_backups
 
-This task create a hourly backup of Mozfest Guidebook. It gets content for `sessions`, `schedule-tracks`, `guides`, `locations` and upload it to a S3 bucket.
+This task create a hourly backup of Mozfest Guidebook. It gets content for `sessions`, `schedule-tracks`, `guides`, `locations` and upload it to a S3 bucket (`mofo-projects` profile, name of the bucket available as an env var on Heroku).
+Backups older than a day are automatically deleted.
 
 Dependencies listed on `Pipefile`.
 
-Usage: `python ./tasks/mozfest_backups/guidebook_backup.py`
+Usage: `python tasks/mozfest_backups/guidebook_backup.py`
 
 The following environment variables must be defined:
 - `GUIDEBOOK_KEY` The Guidebook API key
@@ -74,4 +75,16 @@ The following environment variables must be defined:
 
 #### Rollback
 
-TODO
+It's possible to restore Guidebook data:
+- Manually using the json files stored on S3: it's useful if only a few Guidebook entries need to be restored,
+- Automatically using the backup CLI tool. It will rollback everything to a certain point in time. It won't be able to link restored sessions to a location and/or a track and won't delete new entries that were added after that certain point in time. This tool is to be used in case someone wipes Mozfest guidebook by accident or delete a substantial part of it.
+
+if you want to make a manual restoration but don't have access to the S3 bucket, ask Cade or Patjouk.
+
+To run the automatic restoration:
+- clone this repo,
+- run `pipenv install`,
+- run `pipenv run python tasks/mozfest_backups/rollback.py`,
+- select a timestamp. The format is YYYYMMDD-HHMM,
+- let the script run,
+- go to the S3 bucket and download the `entries-modified-TIMESTAMP.csv` and the 4 `before-rollback-RESOURCE-TIMESTAMP.json` files. Send those files to the person who asked for a rollback.

@@ -3,6 +3,7 @@ import re
 
 import click
 
+from guidebook_backup import do_backup
 from guidebook_rollback import prepare_data_to_rollback, do_rollback
 from utilities import (
     get_bucket_content,
@@ -53,6 +54,9 @@ def is_valid_backup(list_files_s3):
 
 @click.command()
 def rollback():
+    """
+    CLI tool to rollback substantial modifications made to the Mozfest Guidebook.
+    """
     # Get all files from S3
     list_files = get_bucket_content()
 
@@ -63,8 +67,8 @@ def rollback():
     )
 
     # Backup data from guidebook before initiating the rollback
-    # TODO uncomment
-    # do_backup(rollback=True)
+    click.echo("Backup data currently in Guidebook just in case :D")
+    do_backup(rollback=True)
 
     # Select backup data that needs to be restored
     modifications_list = prepare_data_to_rollback(list_files, selected_timestamp)

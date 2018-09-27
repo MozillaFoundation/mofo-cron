@@ -8,7 +8,6 @@ from utilities import (
 )
 
 
-# put this in an env var
 guidebook_resources = ["guides", "sessions", "schedule-tracks", "locations"]
 
 
