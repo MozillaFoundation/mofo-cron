@@ -16,6 +16,7 @@ VICTOROPS_KEY = os.environ["VICTOROPS_KEY"]
 # GuideBook configuration
 API_URL = "https://builder.guidebook.com/open-api/v1/"
 API_KEY = os.environ["GUIDEBOOK_KEY"]
+REQUEST_KWARGS = {"headers": {"Authorization": f"JWT {API_KEY}"}}
 GUIDE_ID = os.environ["GUIDE_ID"]
 
 # AWS configuration
@@ -138,18 +139,18 @@ def get_guidebook_content(guidebook_resource):
     # Guides don't have 'next' or 'results' keys
     if guidebook_resource == "guides":
         resource_url = API_URL + guidebook_resource + f"/{GUIDE_ID}"
-        r = requests.get(resource_url, headers={"Authorization": "JWT " + API_KEY})
+        r = requests.get(resource_url, **REQUEST_KWARGS)
         return r.json()
 
     else:
         resource_url = API_URL + guidebook_resource + f"/?guide={GUIDE_ID}"
-        r = requests.get(resource_url, headers={"Authorization": "JWT " + API_KEY})
+        r = requests.get(resource_url, **REQUEST_KWARGS)
         data = r.json()["results"]
 
         # pagination
         while r.json()["next"]:
             r = requests.get(
-                r.json()["next"], headers={"Authorization": "JWT " + API_KEY}
+                r.json()["next"], **REQUEST_KWARGS
             )
             data.extend(r.json()["results"])
 
