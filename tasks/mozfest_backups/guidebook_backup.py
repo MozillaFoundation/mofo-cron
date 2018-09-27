@@ -20,7 +20,7 @@ def cleanup():
     """
     s3_previous_backups = get_bucket_content()
 
-    # Delete backups on S3 that are older than 2 days
+    # Delete backups on S3 that are older than a day
     delete_old_backups(s3_previous_backups)
 
     # Alert if no backups were uploaded during the last 3 hours

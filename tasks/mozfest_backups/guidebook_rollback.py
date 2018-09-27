@@ -1,32 +1,43 @@
+import re
 from copy import deepcopy
 import json
 import os
 
 from utilities import (
-    get_bucket_content,
     filter_by_resources,
     s3,
     get_guidebook_content,
     PatchGuidebookContent,
     PatchGuideDescription,
     RestoreGuidebookContent,
-    write_csv,
-    upload_csv_to_s3,
 )
 
 S3_BUCKET = os.environ["MOZFEST_S3_BUCKET"]
 
 
-def get_backup_content(backups_list):
+def get_backup_content(backups_list, selected_timestamp, guidebook_resource):
     """
-    Get the latest backup available on S3. Will be changed to the backup selected by the user in the CLI.
+    User must select a timestamp when they do a rollback: this timestamp is used to select the backup that will be
+    used to rollback.
 
     :param backups_list: All backups available on S3, filtered by a Guidebook resource type
+    :param selected_timestamp: Timestamp selected by the user doing the rollback
+    :param guidebook_resource: Name of the Guidebook resource. Can be sessions, locations, etc
     :return: A unique backup (dict). For now, it's the latest one.
     """
 
-    latest_backups = max(backups_list, key=lambda o: o["LastModified"])
-    backup_file = s3.get_object(Bucket=S3_BUCKET, Key=latest_backups["Key"])["Body"]
+    regex = re.compile(guidebook_resource + "-" + selected_timestamp)
+
+    file = ""
+
+    for f in backups_list:
+        if regex.match(f["Key"]):
+            file = f["Key"]
+
+    if not file:
+        raise Exception("File not found on S3.")
+
+    backup_file = s3.get_object(Bucket=S3_BUCKET, Key=file)["Body"]
     backup_file_content = json.loads(backup_file.read())
 
     return backup_file_content
@@ -132,10 +143,12 @@ def compare_content(backup, guidebook_data, resource_name):
     return modified_entries
 
 
-def prepare_data_to_rollback():
+def prepare_data_to_rollback(files_from_s3, timestamp_selected):
     """
     Compare backups and data currently on Guidebook and prepare a list of data that will be restored on Guidebook.
 
+    :param files_from_s3: List of files in Mozfest S3 bucket
+    :param timestamp_selected: Timestamp selected by the user who's doing the rollback
     :return: List of changes to upload to Guidebook
     """
 
@@ -143,15 +156,14 @@ def prepare_data_to_rollback():
     # "locations".
     guidebook_resources = ["guides", "schedule-tracks", "locations", "sessions"]
 
-    # Get all backups from S3
-    backups_s3 = get_bucket_content()
-
     # List of changes that will be uploaded to Guidebook
     data_to_rollback = []
 
     for resource_type in guidebook_resources:
-        all_backups = filter_by_resources(backups_s3, resource_type)
-        selected_guidebook_backup = get_backup_content(all_backups)
+        all_backups = filter_by_resources(files_from_s3, resource_type)
+        selected_guidebook_backup = get_backup_content(
+            all_backups, timestamp_selected, resource_type
+        )
         guidebook_current_data = get_guidebook_content(resource_type)
 
         if resource_type == "guides":
@@ -177,24 +189,3 @@ def do_rollback(rollback_data):
     for guidebook_resource_type in rollback_data:
         for modification_to_apply in guidebook_resource_type:
             modification_to_apply.execute()
-
-
-if __name__ == "__main__":
-    # Backup data from guidebook before initiating the rollback
-    # TODO uncomment
-    # do_backup(rollback=True)
-
-    # Select backup data that needs to be restored
-    modifications_list = prepare_data_to_rollback()
-
-    # Apply all the changes to Guidebook
-    do_rollback(modifications_list)
-
-    # Upload a csv of all changes that were applied
-    modifications_csv = write_csv(modifications_list)
-    upload_csv_to_s3(modifications_csv)
-
-
-#  TODO:
-# chose which backup we want to rollback to.
-# Need a CLI for people to run the rollback!

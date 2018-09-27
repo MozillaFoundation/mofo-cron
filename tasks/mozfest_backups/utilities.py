@@ -109,7 +109,7 @@ def is_stale(file_list):
 
 def delete_old_backups(file_list):
     """
-    Delete backups that are older than 48h.
+    Delete backups that are older than 24h.
 
     :param file_list: List of backups on S3
     :return:
@@ -119,7 +119,7 @@ def delete_old_backups(file_list):
 
     for file in file_list:
         time_diff = get_time_diff(file["LastModified"])
-        if time_diff >= timedelta(days=2):
+        if time_diff >= timedelta(days=1):
             print(f"Deleting {file['Key']}")
             s3.delete_object(Bucket=S3_BUCKET, Key=file["Key"])
 
@@ -258,7 +258,7 @@ class PatchGuidebookContent(object):
         resource_url = (
             API_URL + self.guidebook_resource_name + f"/{self.guidebook_element_id}/"
         )
-        requests.patch(
+        r = requests.patch(
             resource_url,
             headers={"Authorization": "JWT " + API_KEY},
             data=self.backup_element,
@@ -290,11 +290,14 @@ class RestoreGuidebookContent(object):
             drop_schedule_tracks(self.backup_element)
 
         resource_url = API_URL + self.guidebook_resource_name + "/"
-        requests.post(
+        r = requests.post(
             resource_url,
             headers={"Authorization": "JWT " + API_KEY},
             data=self.backup_element,
-        ).raise_for_status()
+        )
+        print("Content:", r.content)
+        r.raise_for_status()
+        # todo .raise_for_status()
 
 
 def write_csv(list_of_changes):
