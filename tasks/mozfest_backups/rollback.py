@@ -63,11 +63,13 @@ def rollback():
     available_rollback_files = is_valid_backup(list_files)
 
     selected_timestamp = click.prompt(
-        text="Select a rollback:\n", type=click.Choice(available_rollback_files.keys())
+        text="Select a rollback:\n",
+        type=click.Choice(available_rollback_files.keys()),
+        confirmation_prompt=True,
     )
 
     # Backup data from guidebook before initiating the rollback
-    click.echo("Backup data currently in Guidebook just in case :D")
+    click.echo("Backup data currently in Guidebook, just in case :D")
     do_backup(rollback=True)
 
     # Select backup data that needs to be restored

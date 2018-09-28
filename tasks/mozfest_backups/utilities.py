@@ -149,9 +149,7 @@ def get_guidebook_content(guidebook_resource):
 
         # pagination
         while r.json()["next"]:
-            r = requests.get(
-                r.json()["next"], **REQUEST_KWARGS
-            )
+            r = requests.get(r.json()["next"], **REQUEST_KWARGS)
             data.extend(r.json()["results"])
 
         return data

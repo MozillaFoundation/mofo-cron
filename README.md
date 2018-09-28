@@ -79,7 +79,7 @@ It's possible to restore Guidebook data:
 - Manually using the json files stored on S3: it's useful if only a few Guidebook entries need to be restored,
 - Automatically using the backup CLI tool. It will rollback everything to a certain point in time. It won't be able to link restored sessions to a location and/or a track and won't delete new entries that were added after that certain point in time. This tool is to be used in case someone wipes Mozfest guidebook by accident or delete a substantial part of it.
 
-if you want to make a manual restoration but don't have access to the S3 bucket, ask Cade or Patjouk.
+if you want to make a manual restoration, but don't have access to the S3 bucket, ask Cade (cade@mozillafoundation.org) or Patjouk (lucied@mozillafoundation.org) by email or slack.
 
 To run the automatic restoration:
 - clone this repo,

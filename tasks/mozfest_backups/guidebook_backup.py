@@ -25,7 +25,9 @@ def cleanup():
 
         # Alert if no backups were uploaded during the last 3 hours
         for resource in guidebook_resources:
-            filtered_previous_backups = filter_by_resources(s3_previous_backups, resource)
+            filtered_previous_backups = filter_by_resources(
+                s3_previous_backups, resource
+            )
             is_stale(filtered_previous_backups)
     else:
         print("Nothing to cleanup, the bucket is empty.")
