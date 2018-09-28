@@ -84,6 +84,7 @@ if you want to make a manual restoration, but don't have access to the S3 bucket
 To run the automatic restoration:
 - clone this repo,
 - run `pipenv install`,
+- copy the `env.dist` file to an `.env` and fill it,
 - run `pipenv run python tasks/mozfest_backups/rollback.py`,
 - select a timestamp. The format is YYYYMMDD-HHMM,
 - let the script run,
