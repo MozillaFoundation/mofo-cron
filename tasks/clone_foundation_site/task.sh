@@ -53,17 +53,13 @@ else
     export PATH=~/heroku/bin:${PATH}
 fi
 
-AWS_BIN=$(command -v aws)
+AWS_BIN=$(command -v python -m awscli)
 
 if [ "$?" -eq 0 ]; then
     echo "AWS cli is already installed..."
 else
-    echo "Downloading and installing the AWS cli"
-    curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
-    unzip awscli-bundle.zip
-    ./awscli-bundle/install -b ~/bin/aws
-    export PATH=~/bin:${PATH}
-    echo $(which aws)
+    echo "Installing the AWS cli"
+    pip install awscli
 fi
 
 # re-enable exit on non-zero exit code
@@ -93,7 +89,8 @@ echo "Executing cleanup SQL script.."
 psql ${staging_db} -f ./tasks/clone_foundation_site/cleanup.sql
 
 echo "Syncing S3 Buckets"
-aws s3 sync --region ${S3_REGION} s3://${PRODUCTION_S3_BUCKET}/${PRODUCTION_S3_PREFIX} s3://${STAGING_S3_BUCKET}/${STAGING_S3_PREFIX}
+python -m awscli s3 sync --region ${S3_REGION} s3://${PRODUCTION_S3_BUCKET}/${PRODUCTION_S3_PREFIX}
+s3://${STAGING_S3_BUCKET}/${STAGING_S3_PREFIX}
 
 echo "Running migrations..."
 heroku run -a ${staging_app} -- python network-api/manage.py migrate --no-input
