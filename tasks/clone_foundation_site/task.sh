@@ -29,17 +29,33 @@ set -e
 
 current_dir=$(pwd)
 
-echo "Checking the day of the week..."
-DAYOFWEEK=$(date +%u)
-if [ "${DAYOFWEEK}" -ne 1 ]; then
-    echo "This task only executes on Mondays"
+# Option to check if today is a Monday
+while [[ $# -gt 0 ]]
+do key="$1"
+
+case $key in
+    --only-monday)
+    echo "Checking the day of the week..."
+    DAYOFWEEK=$(date +%u)
+    if [ "${DAYOFWEEK}" -ne 1 ]; then
+        echo "This task only executes on Mondays"
+        exit 0
+    else
+        echo "Happy Monday! Beginning database transfer process..."
+    fi
+    shift
+    ;;
+    *)
+    echo "Invalid option. Use --only-monday to make this task run on Mondays only."
     exit 0
-else
-    echo "Happy Monday! Beginning database transfer process..."
-fi
+    ;;
+esac
+done
 
 # temporarily disable automatic exit on non-zero exit code
 set +e
+
+echo "Beginning database transfer process..."
 
 HEROKU_BIN=$(command -v heroku)
 
