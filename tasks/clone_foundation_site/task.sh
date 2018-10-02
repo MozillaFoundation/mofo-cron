@@ -53,7 +53,8 @@ else
     export PATH=~/heroku/bin:${PATH}
 fi
 
-AWS_BIN=$(command -v python -m awscli)
+echo "Check if AWS cli is installed..."
+AWS_BIN=$(python -c "import awscli")
 
 if [ "$?" -eq 0 ]; then
     echo "AWS cli is already installed..."
