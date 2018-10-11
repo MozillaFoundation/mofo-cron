@@ -29,17 +29,33 @@ set -e
 
 current_dir=$(pwd)
 
-echo "Checking the day of the week..."
-DAYOFWEEK=$(date +%u)
-if [ "${DAYOFWEEK}" -ne 1 ]; then
-    echo "This task only executes on Mondays"
+# Option to check if today is a Monday
+while [[ $# -gt 0 ]]
+do key="$1"
+
+case $key in
+    --only-monday)
+    echo "Checking the day of the week..."
+    DAYOFWEEK=$(date +%u)
+    if [ "${DAYOFWEEK}" -ne 1 ]; then
+        echo "This task only executes on Mondays"
+        exit 0
+    else
+        echo "Happy Monday! Beginning database transfer process..."
+    fi
+    shift
+    ;;
+    *)
+    echo "Invalid option. Use --only-monday to make this task run on Mondays only."
     exit 0
-else
-    echo "Happy Monday! Beginning database transfer process..."
-fi
+    ;;
+esac
+done
 
 # temporarily disable automatic exit on non-zero exit code
 set +e
+
+echo "Beginning database transfer process..."
 
 HEROKU_BIN=$(command -v heroku)
 
@@ -53,7 +69,8 @@ else
     export PATH=~/heroku/bin:${PATH}
 fi
 
-AWS_BIN=$(command -v python -m awscli)
+echo "Check if AWS cli is installed..."
+AWS_BIN=$(python -c "import awscli")
 
 if [ "$?" -eq 0 ]; then
     echo "AWS cli is already installed..."
@@ -89,8 +106,7 @@ echo "Executing cleanup SQL script.."
 psql ${staging_db} -f ./tasks/clone_foundation_site/cleanup.sql
 
 echo "Syncing S3 Buckets"
-python -m awscli s3 sync --region ${S3_REGION} s3://${PRODUCTION_S3_BUCKET}/${PRODUCTION_S3_PREFIX}
-s3://${STAGING_S3_BUCKET}/${STAGING_S3_PREFIX}
+python -m awscli s3 sync --region ${S3_REGION} s3://${PRODUCTION_S3_BUCKET}/${PRODUCTION_S3_PREFIX} s3://${STAGING_S3_BUCKET}/${STAGING_S3_PREFIX}
 
 echo "Running migrations..."
 heroku run -a ${staging_app} -- python network-api/manage.py migrate --no-input

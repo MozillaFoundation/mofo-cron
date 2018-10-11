@@ -45,6 +45,8 @@ This task copies the production foundation site data to staging, scrubbing the d
 
 Usage: `./tasks/clone_foundation_site/task.sh`
 
+To run it only on Monday, add the `--only-monday` flag.
+
 The following environment variables must be defined:
 - `STAGING_APP_NAME` The target of the database restoration
 - `PRODUCTION_APP_NAME` The app whose database should be snapshotted for restoration
