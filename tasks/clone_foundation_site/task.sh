@@ -38,7 +38,7 @@ case $key in
     echo "Checking the day of the week..."
     DAYOFWEEK=$(date +%u)
     if [ "${DAYOFWEEK}" -ne 1 ]; then
-        echo "This task only executes on Mondays"
+        echo "The clone foundation DB task only executes on Mondays"
         exit 0
     else
         echo "Happy Monday! Beginning database transfer process..."

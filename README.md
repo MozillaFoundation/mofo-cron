@@ -63,7 +63,11 @@ The following environment variables must be defined:
 This task create a hourly backup of Mozfest Guidebook. It gets content for `sessions`, `schedule-tracks`, `guides`, `locations` and upload it to a S3 bucket (`mofo-projects` profile, name of the bucket available as an env var on Heroku).
 Backups older than a day are automatically deleted.
 
-Dependencies listed on `Pipefile`.
+Dependencies (`Pipefile`):
+- requests,
+- boto,
+- attrs,
+- click
 
 Usage: `python tasks/mozfest_backups/guidebook_backup.py`
 
@@ -91,3 +95,12 @@ To run the automatic restoration:
 - select a timestamp. The format is YYYYMMDD-HHMM,
 - let the script run,
 - go to the S3 bucket and download the `entries-modified-TIMESTAMP.csv` and the 4 `before-rollback-RESOURCE-TIMESTAMP.json` files. Send those files to the person who asked for a rollback.
+
+### tasks/heroku_pipelines_check
+
+This task checks Heroku pipelines and posts a message on Slack (#mofo-production) if staging could be promoted to prod. It runs from Monday to Thursday. Supported pipelines listed at the top of `slack_webhook.py`.
+
+Dependencies (`Pipefile`):
+- requests
+
+Usage: `python tasks/heroku_pipelines_check/slack_webhook.py`
