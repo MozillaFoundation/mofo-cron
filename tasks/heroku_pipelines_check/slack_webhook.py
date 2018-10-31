@@ -1,4 +1,5 @@
 import re
+import shutil
 import subprocess
 from datetime import date
 
@@ -17,6 +18,13 @@ slack_webhook = os.environ["SLACK_PIPELINES_WEBHOOK"]
 
 # Task only run from Monday to Thursday
 if date.today().weekday() in range(0, 4):
+
+    # Install HerokuCLI
+    if shutil.which("heroku"):
+        print("Heroku CLI is already installed")
+    else:
+        subprocess.run("curl https://cli-assets.heroku.com/heroku-linux-x64.tar.gz | tar -xz", shell=True, check=True)
+        os.environ["PATH"] += ":/app/heroku/bin"
 
     for app in pipelines:
         output = (
