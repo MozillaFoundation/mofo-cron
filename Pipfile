@@ -5,9 +5,6 @@ name = "pypi"
 
 [packages]
 requests = "*"
-"boto3" = "*"
-attrs = "*"
-click = "*"
 
 [dev-packages]
 python-coveralls = "*"
