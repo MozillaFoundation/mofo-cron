@@ -22,7 +22,7 @@ slack_webhook = os.environ["SLACK_PIPELINES_WEBHOOK"]
 def get_commits_info(commits):
     result = []
     for commit in commits:
-        commit = commit.split('  ')
+        commit = re.split(r'\s{2,}', commit)
         commit_info = ': '.join(commit[2:4])
         result.append(commit_info)
 
