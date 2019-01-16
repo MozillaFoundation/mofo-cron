@@ -59,7 +59,6 @@ echo "Beginning database transfer process..."
 
 HEROKU_BIN=$(command -v heroku)
 
-
 if [ "$?" -eq 0 ]; then
     echo "Heroku CLI is already installed..."
 else

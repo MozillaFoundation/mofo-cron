@@ -11,18 +11,6 @@ DECLARE
     new_username varchar;
     counter integer := 1;
 BEGIN
---     scrub the user table
-    TRUNCATE django_session;
-
---     clean up non-staff social auth data
-    DELETE FROM social_auth_usersocialauth
-    WHERE uid NOT LIKE '%@mozillafoundation.org';
-
---     Update the site domain
-    UPDATE django_site
-    SET domain = 'foundation.mofostaging.net'
-    WHERE domain = 'foundation.mozilla.org';
-
 --     Iterate over each non-staff user and remove any PII
     FOR user_row IN
         SELECT id
@@ -48,6 +36,16 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+--     scrub the user table
+TRUNCATE django_session;
+
+--     clean up non-staff social auth data
+DELETE FROM social_auth_usersocialauth
+WHERE uid NOT LIKE '%@mozillafoundation.org';
+
+--     Update the site domain
+UPDATE django_site
+SET domain = 'foundation.mofostaging.net'
+WHERE domain = 'foundation.mozilla.org';
+
 SELECT clean_user_data();
-
-
