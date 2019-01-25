@@ -23,6 +23,10 @@ BEGIN
     SET domain = 'foundation.mofostaging.net'
     WHERE domain = 'foundation.mozilla.org';
 
+    UPDATE wagtailcore_site
+    SET hostname = 'foundation.mofostaging.net'
+    WHERE hostname = 'foundation.mozilla.org';
+
 --     Iterate over each non-staff user and remove any PII
     FOR user_row IN
         SELECT id
