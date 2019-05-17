@@ -111,9 +111,6 @@ python -m awscli s3 sync --region ${S3_REGION} s3://${PRODUCTION_S3_BUCKET}/${PR
 echo "Running migrations..."
 heroku run -a ${staging_app} -- python network-api/manage.py migrate --no-input
 
-echo "Creating Mozfest Site..."
-heroku run -a ${staging_app} -- python network-api/manage.py generate_mozfest_site
-
 echo "Scaling web dynos on staging to 1..."
 heroku ps:scale -a ${staging_app} web=1
 

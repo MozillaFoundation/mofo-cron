@@ -27,6 +27,10 @@ BEGIN
     SET hostname = 'foundation.mofostaging.net'
     WHERE hostname = 'foundation.mozilla.org';
 
+    UPDATE wagtailcore_site
+    SET hostname = 'mozillafestival.mofostaging.net'
+    WHERE hostname = 'mozillafestival.mofodev.net' OR hostname = 'mozillafestival.org'
+
 --     Iterate over each non-staff user and remove any PII
     FOR user_row IN
         SELECT id
