@@ -67,8 +67,8 @@ if date.today().weekday() in range(0, 4):
             - Last line is an empty line.
             """
             title = output[1].strip("=\n").lstrip()
-#             if re.search("donate", title):
-#                 title = "<@tchevalier>: " + title
+            if re.search("donate", title):
+                title = "<@tchevalier>: " + title
             commits_list = output[4:-2]
             if commits_list:
                 if len(commits_list) >= 2:
