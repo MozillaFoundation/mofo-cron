@@ -8,7 +8,6 @@ import os
 
 pipelines = {
     "foundation-site": "foundation-mofostaging-net",
-    "mozillafestival-org": "mozillafestival-org-staging",
     "donate-mozilla-org": "donate-mozilla-org-us-staging",
     "network-pulse": "network-pulse-staging",
     "network-pulse-api": "network-pulse-api-staging",
