@@ -23,13 +23,12 @@ def get_commits_info(commits):
     for commit in commits:
         # Since Heroku doesn't use 2 spaces anymore to separate the columns, we use a positive lookbehind to find
         # everything that is after the commit hash and the time and date.
+        extra_spaces = re.compile(r"\s{2,}")
+        commit = re.sub(extra_spaces, " ", commit)
         m = re.search(
-            r"(?<=[\w\d]{7}\s\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\s)"
-            r"(?P<user>[\w\d\-\[\]]*\s{1}[\w\d\-\[\]]*\s)"
-            r"(?P<title>.*)",
-            commit,
-        )
-        result.append(f"{m.group('user').strip()}: {m.group('title').strip()}\n")
+            r"(?<=[\w\d]{7}\s\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\s).*", commit)
+
+        result.append(m.group(0))
 
     return result
 
