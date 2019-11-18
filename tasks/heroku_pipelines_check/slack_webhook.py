@@ -21,9 +21,14 @@ slack_webhook = os.environ["SLACK_PIPELINES_WEBHOOK"]
 def get_commits_info(commits):
     result = []
     for commit in commits:
-        commit = re.split(r'\s{2,}', commit)
-        commit_info = ': '.join(commit[2:4])
-        result.append(commit_info)
+        # Since Heroku doesn't use 2 spaces anymore to separate the columns, we use a positive lookbehind to find
+        # everything that is after the commit hash and the time and date.
+        extra_spaces = re.compile(r"\s{2,}")
+        commit = re.sub(extra_spaces, " ", commit)
+        m = re.search(
+            r"(?<=[\w\d]{7}\s\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\s).*", commit)
+
+        result.append(m.group(0))
 
     return result
 
@@ -35,7 +40,11 @@ if date.today().weekday() in range(0, 4):
     if shutil.which("heroku"):
         print("Heroku CLI is already installed")
     else:
-        subprocess.run("curl https://cli-assets.heroku.com/heroku-linux-x64.tar.gz | tar -xz", shell=True, check=True)
+        subprocess.run(
+            "curl https://cli-assets.heroku.com/heroku-linux-x64.tar.gz | tar -xz",
+            shell=True,
+            check=True,
+        )
         os.environ["PATH"] += ":/app/heroku/bin"
 
     for app in pipelines:
@@ -60,15 +69,15 @@ if date.today().weekday() in range(0, 4):
             We expect Heroku's output to have this structure:
             - line 1 is empty,
             - line 2 is the name of the app. It also tells us if prod is behind staging or not.
-            - line 3 and 4 are column titles and table structure,
-            - line 5 to the third to last are commits (date, author, etc),
+            - line 3 is column titles and table structure,
+            - line 4 to the third to last are commits (date, author, etc),
             - Line second to last is the GitHub diff URL,
             - Last line is an empty line.
             """
             title = output[1].strip("=\n").lstrip()
             if re.search("donate", title):
                 title = "<@tchevalier>: " + title
-            commits_list = output[4:-2]
+            commits_list = output[3:-2]
             if commits_list:
                 if len(commits_list) >= 2:
                     attachment_title = "Commits to deploy to production:"
