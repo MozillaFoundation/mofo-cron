@@ -28,7 +28,7 @@ def get_commits_info(commits):
         m = re.search(
             r"(?<=[\w\d]{7}\s\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\s).*", commit)
 
-        result.append(m.group(0))
+        result.append(m.group(0) + "\n")
 
     return result
 
