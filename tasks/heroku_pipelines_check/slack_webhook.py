@@ -11,6 +11,7 @@ pipelines = {
     "donate-mozilla-org": "donate-mozilla-org-us-staging",
     "network-pulse": "network-pulse-staging",
     "network-pulse-api": "network-pulse-api-staging",
+    "donate-wagtail": "donate-wagtail-staging",
 }
 
 slack_webhook = os.environ["SLACK_PIPELINES_WEBHOOK"]
