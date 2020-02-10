@@ -8,10 +8,10 @@ import os
 
 pipelines = {
     "foundation-site": "foundation-mofostaging-net",
-    "donate-mozilla-org": "donate-mozilla-org-us-staging",
     "network-pulse": "network-pulse-staging",
     "network-pulse-api": "network-pulse-api-staging",
-    "donate-wagtail": "donate-wagtail-staging",
+    "mofo-donate": "donate-wagtail-staging",
+    "thunderbird-donate": "thunderbird-donate-staging",
 }
 
 slack_webhook = os.environ["SLACK_PIPELINES_WEBHOOK"]
