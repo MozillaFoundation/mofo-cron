@@ -10,7 +10,7 @@ pipelines = {
     "foundation-site": "foundation-mofostaging-net",
     "network-pulse": "network-pulse-staging",
     "network-pulse-api": "network-pulse-api-staging",
-    "mofo-donate": "donate-wagtail-staging",
+    "donate-wagtail": "donate-wagtail-staging",
     "thunderbird-donate": "thunderbird-donate-staging",
 }
 
