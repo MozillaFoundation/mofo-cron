@@ -11,7 +11,6 @@ pipelines = {
     "network-pulse": "network-pulse-staging",
     "network-pulse-api": "network-pulse-api-staging",
     "donate-wagtail": "donate-wagtail-staging",
-    "thunderbird-donate": "thunderbird-donate-staging",
 }
 
 slack_webhook = os.environ["SLACK_PIPELINES_WEBHOOK"]
@@ -27,11 +26,20 @@ def get_commits_info(commits):
         extra_spaces = re.compile(r"\s{2,}")
         commit = re.sub(extra_spaces, " ", commit)
         m = re.search(
-            r"(?<=[\w\d]{7}\s\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\s).*", commit)
+            r"(?<=[\w\d]{7}\s\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\s).*", commit
+        )
 
         result.append(m.group(0) + "\n")
 
     return result
+
+
+# We need an extra button to link to the Thunderbird donate pipeline
+def when(condition, button):
+    if condition:
+        return [button]
+    else:
+        return []
 
 
 # Task only run from Monday to Thursday
@@ -59,8 +67,8 @@ if date.today().weekday() in range(0, 4):
             requests.post(
                 f"{slack_webhook}",
                 json={
-                    "text": ":fire_engine: Error while running `slack_webhook.py` task on `mofo-cron`. Check logs at "
-                    f"https://eu.logentries.com/app/3aae5f3f#/search/log/628eb861?last=Last%2020%20Minutes"
+                    "text": ":fire_engine: Error while running `slack_webhook.py` task on `mofo-cron`. Check logs in "
+                    "Scalyr."
                 },
                 headers={"Content-Type": "application/json"},
             ).raise_for_status()
@@ -112,7 +120,15 @@ if date.today().weekday() in range(0, 4):
                                     "text": "View pipeline on Heroku",
                                     "url": f"https://dashboard.heroku.com/pipelines/{app}",
                                 },
-                            ],
+                            ]
+                            + when(
+                                app == "donate-wagtail",
+                                {
+                                    "type": "button",
+                                    "text": "View Thunderbird pipeline",
+                                    "url": "https://dashboard.heroku.com/pipelines/thunderbird-donate",
+                                },
+                            ),
                         }
                     ]
                 }
