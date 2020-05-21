@@ -61,6 +61,12 @@ The following environment variables must be defined:
 
 ### tasks/heroku_pipelines_check
 
+#### How to setup local dev
+
+- Create a virtualenv: `python -m venv venv`. Activate it.
+- Install pip-tools: `pip install pip-tools`.
+- Install python dependencies by running `pip-sync requirements.txt dev-requirements.txt`.
+
 This task checks Heroku pipelines and posts a message on Slack (#mofo-production) if staging could be promoted to prod. It runs from Monday to Thursday. Supported pipelines listed at the top of `slack_webhook.py`.
 
 Dependencies (`Pipefile`):
