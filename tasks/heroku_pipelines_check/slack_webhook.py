@@ -87,10 +87,8 @@ if date.today().weekday() in range(0, 4):
             commits_list = output[3:-2]
             if commits_list:
                 if len(commits_list) >= 2:
-                    attachment_title = "Commits to deploy to production:"
                     body = "".join("- " + e for e in get_commits_info(commits_list))
                 else:
-                    attachment_title = "Commit to deploy to production:"
                     body = get_commits_info(commits_list)[0]
             diff_url = output[-1].rstrip()
             up_to_date_regex = "is up to date"
@@ -100,35 +98,46 @@ if date.today().weekday() in range(0, 4):
             else:
                 print(f"Posting message to Slack for {app}.")
                 slack_payload = {
-                    "attachments": [
+                    "blocks": [
                         {
-                            "fallback": f"{app} can be promoted to production.\n"
-                            f"URL to Github diff: {diff_url}\n"
-                            f"URL to pipeline: https://dashboard.heroku.com/pipelines/{app}",
-                            "pretext": f"{title}",
-                            "title": f"{attachment_title}",
-                            "text": f"{body}",
-                            "color": "#36bced",
-                            "actions": [
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f":package: *{title}:*\n"
+                                        f"{body}"
+                            }
+                        },
+                        {
+                            "type": "actions",
+                            "elements": [
                                 {
                                     "type": "button",
-                                    "text": "View Github diff",
-                                    "url": f"{diff_url}",
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": "View Github diff"
+                                    },
+                                    "url": f"{diff_url}"
                                 },
                                 {
                                     "type": "button",
-                                    "text": "View pipeline on Heroku",
-                                    "url": f"https://dashboard.heroku.com/pipelines/{app}",
-                                },
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": "View pipeline on Heroku"
+                                    },
+                                    "url": f"https://dashboard.heroku.com/pipelines/{app}"
+                                }
                             ]
                             + when(
                                 app == "donate-wagtail",
                                 {
                                     "type": "button",
-                                    "text": "View Thunderbird pipeline",
-                                    "url": "https://dashboard.heroku.com/pipelines/thunderbird-donate",
-                                },
-                            ),
+                                    "text": {
+                                        "type": "plain_text",
+                                        "text": "View Thunderbird pipeline"
+                                    },
+                                    "url": "https://dashboard.heroku.com/pipelines/thunderbird-donate"
+                                }
+                            )
                         }
                     ]
                 }
