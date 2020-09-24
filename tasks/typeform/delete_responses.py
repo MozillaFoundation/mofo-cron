@@ -1,11 +1,10 @@
 import os
-import sys
 import requests
 
 
 class ScriptError(Exception):
     """
-    Something went wrong in the script, details in self.message
+    Something went wrong in the script, details can be found in the "message" attribute
     """
     pass
 
@@ -63,6 +62,10 @@ class DeleteResponses:
         try:
             return response.json()
         except ValueError as err:
+            print('*****************\n'
+                  '*Invalid Payload*\n'
+                  '*****************\n'
+                  f'{response.content}')
             raise ScriptError(f'Failed to decode json payload for {response.request.method} {response.url}: {err}')
 
     def get_forms_by_page(self, page):
@@ -107,7 +110,7 @@ class DeleteResponses:
         :raises ScriptError:
             If a non-OK status code is received from Typeform
         """
-        responses_response = requests.get(
+        response = requests.get(
             f'{self.TYPEFORM_API}/{form_id}/responses',
             auth=self.token_auth,
             params={
@@ -115,13 +118,13 @@ class DeleteResponses:
             }
         )
 
-        if responses_response.status_code != requests.codes.ok:
-            raise ScriptError(f'Failed to retrieve responses for form: {form_id} - {responses_response.status_code}')
+        if response.status_code != requests.codes.ok:
+            raise ScriptError(f'Failed to retrieve responses for form: {form_id} - {response.status_code}')
 
-        json_response = self.decode_json(responses_response)
+        json_response = self.decode_json(response)
 
         # map the responses so we only have their IDs & Convert the map generator object into a proper list
-        response_ids = list(map(lambda response: response['response_id'], json_response['items']))
+        response_ids = list(map(lambda item: item['response_id'], json_response['items']))
 
         return response_ids, json_response['page_count']
 
@@ -180,7 +183,6 @@ class DeleteResponses:
         :raises ScriptError:
             If a non-OK status code is received from Typeform
         """
-        #
         del_response = requests.delete(
             f'{self.TYPEFORM_API}/{form_id}/responses',
             auth=self.token_auth,
@@ -192,7 +194,6 @@ class DeleteResponses:
         if del_response.status_code != requests.codes.ok:
             raise ScriptError(f'Failed to delete responses for form: {form_id} - {del_response.status_code}')
 
-    #
     def delete_form_responses(self, form_id, response_ids):
         """
         Delete all responses for a form in batches of 25 ids (The request to delete responses has IDs in the query, so limiting it to something reasonably small)
