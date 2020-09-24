@@ -8,6 +8,7 @@ from delete_responses import (
     ScriptError
 )
 
+auth_token = 'test-auth-token'
 mock_forms_page_1 = [{'id': '1'}, {'id': '2'}]
 mock_forms_page_2 = [{'id': '3'}, {'id': '4'}]
 mock_forms_page_3 = [{'id': '5'}, {'id': '6'}]
@@ -47,7 +48,7 @@ class TestDeleteResponses(TestCase):
     @patch('delete_responses.DeleteResponses.get_forms_by_page')
     def test_get_form_id_list_empty(self, mock_get_forms_by_page):
         mock_get_forms_by_page.return_value = ([], 1)
-        delete_responses = DeleteResponses()
+        delete_responses = DeleteResponses(auth_token)
         form_list = delete_responses.get_form_id_list()
         mock_get_forms_by_page.assert_called_once()
         self.assertEqual(form_list, [])
@@ -55,7 +56,7 @@ class TestDeleteResponses(TestCase):
     @patch('delete_responses.DeleteResponses.get_forms_by_page')
     def test_get_form_id_list_one_page(self, mock_get_forms_by_page):
         mock_get_forms_by_page.return_value = (mock_forms_page_1, 1)
-        delete_responses = DeleteResponses()
+        delete_responses = DeleteResponses(auth_token)
         form_list = delete_responses.get_form_id_list()
         mock_get_forms_by_page.assert_called_once()
         self.assertEqual(form_list, ['1', '2'])
@@ -63,7 +64,7 @@ class TestDeleteResponses(TestCase):
     @patch('delete_responses.DeleteResponses.get_forms_by_page')
     def test_get_form_id_list_multi_page(self, mock_get_forms_by_page):
         mock_get_forms_by_page.side_effect = mock_multi_page_return_values
-        delete_responses = DeleteResponses()
+        delete_responses = DeleteResponses(auth_token)
         form_list = delete_responses.get_form_id_list()
         calls = [call(1), call(2), call(3)]
         mock_get_forms_by_page.assert_has_calls(calls)
@@ -74,7 +75,7 @@ class TestDeleteResponses(TestCase):
         mock_response = Mock()
         mock_response.status_code = 403
         mock_get.side_effect = mock_response
-        delete_responses = DeleteResponses()
+        delete_responses = DeleteResponses(auth_token)
         self.assertRaises(ScriptError, delete_responses.get_forms_by_page, 1)
 
     @patch('requests.get')
@@ -83,7 +84,7 @@ class TestDeleteResponses(TestCase):
         mock_response.status_code = 200
         mock_response.json.side_effect = ValueError('This is not JSON')
         mock_get.side_effect = mock_response
-        delete_responses = DeleteResponses()
+        delete_responses = DeleteResponses(auth_token)
         self.assertRaises(ScriptError, delete_responses.get_forms_by_page, 1)
 
     @patch('requests.get')
@@ -95,7 +96,7 @@ class TestDeleteResponses(TestCase):
             'page_count': 1
         }
         mock_get.return_value = mock_response
-        delete_responses = DeleteResponses()
+        delete_responses = DeleteResponses(auth_token)
         response_list = delete_responses.get_form_responses('1')
         mock_get.assert_called_once()
         self.assertEqual(response_list, ['1', '2', '3'])
@@ -106,7 +107,7 @@ class TestDeleteResponses(TestCase):
         mock_response.status_code = 200
         mock_response.json.side_effect = mock_form_responses_return_values
         mock_get.return_value = mock_response
-        delete_responses = DeleteResponses()
+        delete_responses = DeleteResponses(auth_token)
         response_list = delete_responses.get_form_responses('1')
         self.assertEqual(mock_get.call_count, 3)
         self.assertEqual(response_list, ['1', '2', '3', '4', '5', '6', '7', '8', '9'])
@@ -116,7 +117,7 @@ class TestDeleteResponses(TestCase):
         mock_response = Mock()
         mock_response.status_code = 403
         mock_get.side_effect = mock_response
-        delete_responses = DeleteResponses()
+        delete_responses = DeleteResponses(auth_token)
         self.assertRaises(ScriptError, delete_responses.get_form_responses, 1)
 
     @patch('requests.get')
@@ -125,7 +126,7 @@ class TestDeleteResponses(TestCase):
         mock_response.status_code = 200
         mock_response.json.side_effect = ValueError('This is not JSON')
         mock_get.side_effect = mock_response
-        delete_responses = DeleteResponses()
+        delete_responses = DeleteResponses(auth_token)
         self.assertRaises(ScriptError, delete_responses.get_form_responses, 1)
 
     # TODO: test delete_all_form_responses and deleteresponses
@@ -135,7 +136,7 @@ class TestDeleteResponses(TestCase):
         mock_response = Mock()
         mock_response.status_code = 200
         mock_delete.return_value = mock_response
-        delete_responses = DeleteResponses()
+        delete_responses = DeleteResponses(auth_token)
         try:
             delete_responses.delete_form_responses('1', ['1', '2', '3'])
         except ScriptError:
@@ -143,7 +144,7 @@ class TestDeleteResponses(TestCase):
 
     @patch('delete_responses.DeleteResponses.delete_responses')
     def test_delete_form_responses_batched(self, mock_delete_responses):
-        delete_responses = DeleteResponses()
+        delete_responses = DeleteResponses(auth_token)
         response_ids = list(map(str, range(1, 300)))
         try:
             delete_responses.delete_form_responses('1', response_ids)
@@ -156,7 +157,7 @@ class TestDeleteResponses(TestCase):
         mock_response = Mock()
         mock_response.status_code = 403
         mock_get.side_effect = mock_response
-        delete_responses = DeleteResponses()
+        delete_responses = DeleteResponses(auth_token)
         self.assertRaises(ScriptError, delete_responses.delete_responses, '1', ['1', '2', '3'])
 
 
