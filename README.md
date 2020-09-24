@@ -73,3 +73,17 @@ Dependencies (`Pipefile`):
 - requests
 
 Usage: `python tasks/heroku_pipelines_check/slack_webhook.py`
+
+### tasks/typeform
+
+This task will clear out **all** of the responses collected for **every** form in an authenticated Typeform account.
+See the [docstrings in the code](/tasks/typeform/delete_responses.py) for more information on the process and for links
+to Typeform API documentation for endpoints we're using and how to Authenticate.
+
+#### Usage
+1. activate the Python virtual environment (varies depending on OS)
+2. execute `TYPEFORM_AUTH_TOKEN=some-value python tasks/typeform/delete_responses.py`
+
+#### Testing
+1. activate the Python virtual environment (varies depending on OS)
+2. execute `python tasks/typeform/test_delete_responses.py`
