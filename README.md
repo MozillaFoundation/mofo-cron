@@ -85,5 +85,5 @@ to Typeform API documentation for endpoints we're using and how to Authenticate.
 2. execute `TYPEFORM_AUTH_TOKEN=some-value python tasks/typeform/delete_responses.py`
 
 #### Testing
-1. activate teh Python virtual environment (varies depending on OS)
+1. activate the Python virtual environment (varies depending on OS)
 2. execute `python tasks/typeform/test_delete_responses.py`
