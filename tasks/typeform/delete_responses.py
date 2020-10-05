@@ -46,7 +46,7 @@ class DeleteResponses:
         if not auth_token:
             raise ScriptError('auth_token not provided')
 
-        self.token_auth = auth_token
+        self.token_auth = TokenAuth(auth_token)
 
     def decode_json(self, response):
         """
