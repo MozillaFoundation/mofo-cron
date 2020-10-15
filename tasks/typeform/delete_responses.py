@@ -1,5 +1,6 @@
 import os
 import requests
+from datetime import datetime
 
 
 class ScriptError(Exception):
@@ -243,6 +244,11 @@ if __name__ == '__main__':
     if 'TYPEFORM_AUTH_TOKEN' not in os.environ:
         print('You must set TYPEFORM_AUTH_TOKEN')
         exit(1)
+
+    # Check the day of the week
+    if not datetime.today().weekday() == 0:
+        print('This task runs only on Monday')
+        exit(0)
 
     delete_responses = DeleteResponses(os.environ['TYPEFORM_AUTH_TOKEN'])
     delete_responses.execute()
