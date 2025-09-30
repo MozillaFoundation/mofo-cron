@@ -111,6 +111,9 @@ python -m awscli s3 sync --region ${S3_REGION} s3://${PRODUCTION_S3_BUCKET}/${PR
 echo "Running migrations..."
 heroku run -a ${staging_app} -- python network-api/manage.py migrate --no-input
 
+echo "Resetting wagtail site bindings to point to staging hostnames..."
+heroku run -a ${staging_app} -- python network-api/manage.py update_staging_site_hostnames
+
 echo "Scaling web dynos on staging to 1..."
 heroku ps:scale -a ${staging_app} web=1
 
