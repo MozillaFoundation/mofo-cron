@@ -109,7 +109,10 @@ echo "Syncing S3 Buckets"
 python -m awscli s3 sync --region ${S3_REGION} s3://${PRODUCTION_S3_BUCKET}/${PRODUCTION_S3_PREFIX} s3://${STAGING_S3_BUCKET}/${STAGING_S3_PREFIX}
 
 echo "Running migrations..."
-heroku run -a ${staging_app} -- python network-api/manage.py migrate --no-input
+heroku run -a ${staging_app} -- python manage.py migrate --no-input
+
+echo "Resetting wagtail site bindings to point to staging hostnames..."
+heroku run -a ${staging_app} -- python manage.py update_staging_site_hostnames
 
 echo "Scaling web dynos on staging to 1..."
 heroku ps:scale -a ${staging_app} web=1
