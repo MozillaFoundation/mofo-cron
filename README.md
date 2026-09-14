@@ -29,7 +29,7 @@ The SSL checks are inline scheduler commands, not scripts in this repo — they 
 
 Copies production foundation-site data to staging, scrubbing PII on the way. Steps:
 
-1. Install the Heroku CLI and awscli into the dyno if absent.
+1. Install the Heroku CLI into the dyno if absent (awscli now ships in the slug via `requirements.txt`).
 2. Put staging into maintenance mode and scale `web` to 0.
 3. Capture a backup of prod, then of staging (the staging one is the rollback point).
 4. Restore the prod backup over staging.
@@ -110,15 +110,13 @@ The last clone that was **not** rolled back was Monday **2026-06-22**, the Monda
 
 Dating method: `cleanup.sql` truncates `django_session`, so the oldest surviving session in staging marks the last run that stuck. That row was created 2026-06-23 21:27 UTC.
 
-**Fix:** regenerate `requirements.txt` from `requirements.in` with `pip-compile` so `urllib3` and `certifi` (also pinned to 2020 versions) resolve to something Python 3.12 supports. The task installs `awscli` at runtime, which drags in its own botocore that then imports the stale pinned `urllib3` from the slug — so both the pinned deps and the runtime `pip install awscli` need to agree.
-
 ### No historical logs
 
 `heroku logs` retains roughly two hours on this app, and the window is dominated by the hourly SSL checks. Papertrail is attached but returns **zero events for every system**, including busy production apps, so past runs cannot be audited. Either the drain is dead or the `PAPERTRAIL_API_TOKEN` config var lacks log-read scope. Worth fixing before the next incident.
 
 ### Stale dependencies
 
-- `requirements.txt` pins are from 2020: `requests 2.23.0`, `urllib3 1.25.9`, `certifi 2020.4.5.1`.
+- ~~`requirements.txt` pins are from 2020~~ — regenerated on 3.12; see the fix above.
 - `package.json` declares `"node": "^8.11.2"` (long EOL) and `aws-sdk` v2 (maintenance mode).
 - The `heroku` CLI installed by `task.sh` reports itself as 7.69.1 against a current 11.10.0.
 
@@ -185,10 +183,14 @@ Until production is cleaned up, the prod/staging size comparison is not a useful
 
 ## Local development
 
+Use Python 3.12 to match [`runtime.txt`](runtime.txt) — an older interpreter will resolve a different (and broken) dependency set.
+
 ```sh
-python -m venv venv && source venv/bin/activate
+python3.12 -m venv venv && source venv/bin/activate
 pip install pip-tools
 pip-sync requirements.txt dev-requirements.txt
 ```
 
-Dependencies are managed with `pip-compile`: edit `requirements.in` / `dev-requirements.in`, then regenerate the `.txt` files. Copy `env.dist` to `.env` and fill it in.
+Dependencies are managed with `pip-compile`: edit `requirements.in` / `dev-requirements.in`, then regenerate the `.txt` files with **`pip-compile --upgrade`** — without `--upgrade` the existing pins are reused and the regen silently does nothing. Copy `env.dist` to `.env` and fill it in.
+
+Run the typeform tests with `cd tasks/typeform && python -m unittest test_delete_responses`.
