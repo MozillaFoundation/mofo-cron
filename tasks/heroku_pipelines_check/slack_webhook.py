@@ -6,11 +6,11 @@ from datetime import date
 import requests
 import os
 
+# network-pulse, network-pulse-api and donate-wagtail were dropped on 2026-09-21: their staging
+# apps no longer exist, so `pipelines:diff` exited 2 on them. foundation-site is the only pipeline
+# left on the account.
 pipelines = {
     "foundation-site": "foundation-mofostaging-net",
-    "network-pulse": "network-pulse-staging",
-    "network-pulse-api": "network-pulse-api-staging",
-    "donate-wagtail": "donate-wagtail-staging",
 }
 
 slack_webhook = os.environ["SLACK_PIPELINES_WEBHOOK"]
@@ -57,11 +57,30 @@ if date.today().weekday() in range(0, 4):
         os.environ["PATH"] += ":/app/heroku/bin"
 
     for app in pipelines:
-        output = (
-            subprocess.check_output(["heroku", "pipelines:diff", "-a", pipelines[app]])
-            .decode()
-            .splitlines(keepends=True)
-        )
+        # A deleted or renamed pipeline must not stop the apps queued behind it in the loop.
+        try:
+            output = (
+                subprocess.check_output(
+                    ["heroku", "pipelines:diff", "-a", pipelines[app]]
+                )
+                .decode()
+                .splitlines(keepends=True)
+            )
+        except subprocess.CalledProcessError as error:
+            print(
+                f"`heroku pipelines:diff -a {pipelines[app]}` exited "
+                f"{error.returncode}. Skipping {app}."
+            )
+            requests.post(
+                f"{slack_webhook}",
+                json={
+                    "text": f":fire_engine: Error while running `slack_webhook.py` task on "
+                    f"`mofo-cron`: `pipelines:diff` failed for `{app}`. Check "
+                    "`heroku logs -a mofo-cron`."
+                },
+                headers={"Content-Type": "application/json"},
+            ).raise_for_status()
+            continue
 
         if not output:
             requests.post(
@@ -72,7 +91,7 @@ if date.today().weekday() in range(0, 4):
                 },
                 headers={"Content-Type": "application/json"},
             ).raise_for_status()
-            break
+            continue
         else:
             """
             We expect Heroku's output to have this structure:
